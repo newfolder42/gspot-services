@@ -16,6 +16,7 @@ jobs:
       PORT: 3001
       POSTGRES_SSL: true
       SSH_USER: bitnami
+      DEPLOYMENT_DIR: /home/bitnami/gspot
 
     steps:
       - name: Checkout
@@ -86,13 +87,13 @@ jobs:
           port: 22
           script: |
             set -e
-            mkdir -p /opt/gspot
-            cd /opt/gspot
+            mkdir -p ${{ env.DEPLOYMENT_DIR }}
+            cd ${{ env.DEPLOYMENT_DIR }}
             
       - name: Transfer artifact via SCP
         run: |
-          scp -i ~/.ssh/lightsail_key.pem -o StrictHostKeyChecking=no \
-            artifact.zip ${{ env.SSH_USER }}@${{ steps.lightsail_ip.outputs.host }}:/tmp/artifact.zip
+          scp -i ${{ steps.ssh_key.outputs.key_path }} -o StrictHostKeyChecking=no \
+            artifact.zip ${{ env.SSH_USER }}@${{ steps.lightsail_ip.outputs.host }}:${{ env.DEPLOYMENT_DIR }}/artifact.zip
 
       - name: Extract and deploy
         uses: appleboy/ssh-action@master
@@ -103,10 +104,10 @@ jobs:
           port: 22
           script: |
             set -e
-            cd /opt/gspot
-            unzip -o /tmp/artifact.zip
+            cd ${{ env.DEPLOYMENT_DIR }}
+            unzip -o artifact.zip
             # build .env from GitHub Secrets
-            ENV_FILE=/opt/gspot/.env
+            ENV_FILE=${{ env.DEPLOYMENT_DIR }}/.env
             : > $ENV_FILE
             echo "POSTGRES_DB=${{ secrets.POSTGRES_DB }}" >> $ENV_FILE
             echo "POSTGRES_USER=${{ secrets.POSTGRES_USER }}" >> $ENV_FILE
@@ -119,7 +120,7 @@ jobs:
             node -v || (echo "Node missing" && exit 1)
             npm ci --production
             # install/update systemd unit
-            sudo install -m 644 gspot.service /etc/systemd/system/gspot.service
+            sudo install -m 644 ${{ env.DEPLOYMENT_DIR }}/gspot.service /etc/systemd/system/gspot.service
             sudo systemctl daemon-reload
             sudo systemctl enable gspot.service
             sudo systemctl restart gspot.service
