@@ -10,7 +10,7 @@ jobs:
 
     env:
       AWS_REGION: eu-central-1
-      SERVICE_NAME: gspot-service
+      SERVICE_NAME: gspot-services
       S3_BUCKET: gspot-ci-artifacts
       S3_PREFIX: gspot
       PORT: 3001
