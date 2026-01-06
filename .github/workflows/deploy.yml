@@ -67,11 +67,15 @@ jobs:
       - name: Download Lightsail SSH key
         id: ssh_key
         run: |
+          mkdir -p ~/.ssh
           aws lightsail download-default-key-pair \
             --region ${{ env.AWS_REGION }} \
-            --query 'privateKeyBase64' --output text | base64 -d > /tmp/lightsail_key
-          chmod 600 /tmp/lightsail_key
-          echo "key_path=/tmp/lightsail_key" >> "$GITHUB_OUTPUT"
+            --query 'privateKeyBase64' \
+            --output text > ~/.ssh/lightsail_key.pem
+          chmod 600 ~/.ssh/lightsail_key.pem
+          # Add instance to known_hosts to avoid SSH confirmation
+          ssh-keyscan -H ${{ steps.lightsail_ip.outputs.host }} >> ~/.ssh/known_hosts 2>/dev/null || true
+          echo "key_path=$HOME/.ssh/lightsail_key.pem" >> "$GITHUB_OUTPUT"
 
       - name: Deploy via SSH
         uses: appleboy/ssh-action@master
