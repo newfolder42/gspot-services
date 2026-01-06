@@ -86,8 +86,23 @@ jobs:
           port: 22
           script: |
             set -e
-            aws s3 cp s3://${{ env.S3_BUCKET }}/${{ env.S3_PREFIX }}/artifact.zip /tmp/artifact.zip
             mkdir -p /opt/gspot
+            cd /opt/gspot
+            
+      - name: Transfer artifact via SCP
+        run: |
+          scp -i ~/.ssh/lightsail_key.pem -o StrictHostKeyChecking=no \
+            artifact.zip ${{ env.SSH_USER }}@${{ steps.lightsail_ip.outputs.host }}:/tmp/artifact.zip
+
+      - name: Extract and deploy
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ steps.lightsail_ip.outputs.host }}
+          username: ${{ env.SSH_USER }}
+          key_path: ${{ steps.ssh_key.outputs.key_path }}
+          port: 22
+          script: |
+            set -e
             cd /opt/gspot
             unzip -o /tmp/artifact.zip
             # build .env from GitHub Secrets
