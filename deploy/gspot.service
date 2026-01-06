@@ -7,7 +7,7 @@ User=bitnami
 Group=bitnami
 WorkingDirectory=/home/bitnami/gspot
 EnvironmentFile=/home/bitnami/gspot/.env
-ExecStart=/usr/bin/node /home/bitnami/gspot/dist/index.js
+ExecStart=/usr/bin/node /home/bitnami/gspot/dist/app/index.js
 Restart=on-failure
 
 [Install]
