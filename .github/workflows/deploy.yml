@@ -1,0 +1,98 @@
+name: CI / Deploy
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    env:
+      AWS_REGION: eu-central-1
+      SERVICE_NAME: gspot-service
+      S3_BUCKET: gspot-ci-artifacts
+      S3_PREFIX: gspot
+      PORT: 3001
+      POSTGRES_SSL: true
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+
+      - name: Install deps (src)
+        run: npm ci
+        working-directory: src
+
+      - name: Build (src)
+        run: npm run build
+        working-directory: src
+
+      - name: Package artifact
+        run: |
+          cd src
+          zip -qr ../artifact.zip dist package.json package-lock.json
+          cd ..
+          # add systemd unit into the zip (flattened)
+          zip -qu artifact.zip deploy/gspot.service
+
+      - name: Upload artifact to S3
+        run: |
+          aws s3 cp artifact.zip s3://${{ env.S3_BUCKET }}/${{ env.S3_PREFIX }}/artifact.zip
+
+      - name: Resolve EC2 instance id by tag
+        id: resolve_instance
+        run: |
+          IID=$(aws ec2 describe-instances \
+            --filters "Name=tag:Name,Values=${{env.SERVICE_NAME}}" "Name=instance-state-name,Values=running" \
+            --query "Reservations[].Instances[0].InstanceId" --output text)
+          if [ -z "$IID" ] || [ "$IID" = "None" ]; then
+            echo "No running instance found with tag Name=${{env.SERVICE_NAME}}" 1>&2
+            exit 1
+          fi
+          echo "instance_id=$IID" >> "$GITHUB_OUTPUT"
+
+      - name: Deploy via SSM RunCommand
+        run: |
+          aws ssm send-command \
+            --instance-ids ${{ steps.resolve_instance.outputs.instance_id }} \
+            --document-name "AWS-RunShellScript" \
+            --comment "Deploy gspot" \
+            --parameters commands="[
+              'set -e',
+              'aws s3 cp s3://${{ env.S3_BUCKET }}/${{ env.S3_PREFIX }}/artifact.zip /tmp/artifact.zip',
+              'mkdir -p /opt/gspot',
+              'cd /opt/gspot',
+              'unzip -o /tmp/artifact.zip',
+              '# build .env from GitHub Secrets',
+              'ENV_FILE=/opt/gspot/.env',
+              ': > $ENV_FILE',
+              'echo "POSTGRES_DB=${{ secrets.POSTGRES_DB }}" >> $ENV_FILE',
+              'echo "POSTGRES_USER=${{ secrets.POSTGRES_USER }}" >> $ENV_FILE',
+              'echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" >> $ENV_FILE',
+              'echo "POSTGRES_HOST=${{ secrets.POSTGRES_HOST }}" >> $ENV_FILE',
+              'echo "POSTGRES_SSL=${{ env.POSTGRES_SSL }}" >> $ENV_FILE',
+              'echo "REDIS_URL=${{ secrets.REDIS_URL }}" >> $ENV_FILE',
+              'echo "PORT=${{ env.PORT }}" >> $ENV_FILE',
+              'echo "NODE_ENV=production" >> $ENV_FILE',
+              'node -v || (echo "Node missing" && exit 1)',
+              'npm ci --production',
+               # install/update systemd unit
+               'install -m 644 gspot.service /etc/systemd/system/gspot.service',
+               'systemctl daemon-reload',
+               'systemctl enable gspot.service',
+               'systemctl restart gspot.service'
+            ]" \
+            --output text

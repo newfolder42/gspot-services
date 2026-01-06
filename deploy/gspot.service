@@ -1,0 +1,14 @@
+[Unit]
+Description=GSpot Service
+After=network.target
+
+[Service]
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/opt/gspot
+EnvironmentFile=/opt/gspot/.env
+ExecStart=/usr/bin/node /opt/gspot/dist/app/index.js
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
