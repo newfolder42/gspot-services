@@ -120,7 +120,7 @@ jobs:
             node -v || (echo "Node missing" && exit 1)
             npm ci --production
             # install/update systemd unit
-            sudo install -m 644 ${{ env.DEPLOYMENT_DIR }}/gspot.service /etc/systemd/system/gspot.service
+            sudo install -m 644 ${{ env.DEPLOYMENT_DIR }}/deploy/gspot.service /etc/systemd/system/gspot.service
             sudo systemctl daemon-reload
             sudo systemctl enable gspot.service
             sudo systemctl restart gspot.service
