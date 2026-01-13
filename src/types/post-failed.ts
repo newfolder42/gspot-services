@@ -1,8 +1,8 @@
 import { z } from 'zod';
 
-export const PostCreatedSchema = z.object({
+export const PostFailedSchema = z.object({
   resource: z.literal('post'),
-  action: z.literal('created'),
+  action: z.literal('failed'),
   createdAt: z.string(),
   payload: z.object({
     postId: z.number(),
@@ -10,7 +10,8 @@ export const PostCreatedSchema = z.object({
     postTitle: z.string(),
     authorId: z.number(),
     authorAlias: z.string(),
+    reason: z.string(),
   }),
 });
 
-export type PostCreated = z.infer<typeof PostCreatedSchema>;
+export type PostFailed = z.infer<typeof PostFailedSchema>;

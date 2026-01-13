@@ -1,8 +1,8 @@
-import { PostCreated } from '../types/post-created';
+import { PostPublished } from '../types/post-published';
 import { getConnecters } from '../lib/connectiosn';
 import { createNotification } from '../lib/notifications';
 
-export default async function handlePostCreated(event: PostCreated) {
+export default async function handlePostPublished(event: PostPublished) {
   const payload = event.payload;
 
   const connections = await getConnecters(payload.authorId);

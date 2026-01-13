@@ -1,12 +1,19 @@
+import cron from "node-cron";
 import dotenv from 'dotenv';
-import { createClient } from 'redis';
-import http from 'http';
-import { dbclose, query } from './lib/db';
+import { dbclose } from './lib/db';
+import { initializeRedis } from './lib/redis';
+import { createHealthServer } from './lib/healthServer';
+import { withSchema } from './lib/validation';
+import { runUserCronJob } from './lib/cron';
 import { PostGuessedSchema } from './types/post-guesed';
-import { PostCreatedSchema } from './types/post-created';
+import { PostPublishedSchema } from './types/post-published';
 import { Mediator } from './mediator';
-import postCreatedHandler from './handlers/postCreated';
+import postCreatedHandler from './handlers/postPublished';
 import postGuessedHandler from './handlers/postGuessed';
+import { PostProcessingSchema } from "./types/post-processing";
+import handlePostProcessing from "./handlers/postProcessing";
+import { PostFailedSchema } from "./types/post-failed";
+import handlePostFailed from "./handlers/postFailed";
 
 dotenv.config();
 
@@ -14,33 +21,19 @@ const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
 const PORT = Number(process.env.PORT) || 3001;
 
 async function start() {
-  console.log('Subscriber client (dedicated for Pub/Sub)');
-  const redis = createClient({ url: REDIS_URL });
-  redis.on('error', (err) => console.error('Redis error', err));
-  await redis.connect();
-  console.log('Connected to Redis (subscriber)');
+  console.log('Starting gspot-services...');
 
-  // Health client (separate connection for ping/health checks)
-  const redisHealth = createClient({ url: REDIS_URL });
-  redisHealth.on('error', (err) => console.warn('Redis health client error', err));
-  await redisHealth.connect();
+  // Initialize connections
+  const { redis, redisHealth, redisPublisher } = await initializeRedis(REDIS_URL);
 
+  // Setup event mediator
   const mediator = new Mediator();
-
-  const withSchema = (schema: any, handler: (evt: any) => Promise<void>) => {
-    return async (raw: unknown) => {
-      const result = schema.safeParse(raw);
-      if (!result.success) {
-        console.error('Invalid event payload', result.error.format());
-        return;
-      }
-      await handler(result.data);
-    };
-  };
-
-  mediator.register('gspot:post:created', withSchema(PostCreatedSchema, postCreatedHandler));
+  mediator.register('gspot:post:published', withSchema(PostPublishedSchema, postCreatedHandler));
   mediator.register('gspot:post:guessed', withSchema(PostGuessedSchema, postGuessedHandler));
+  mediator.register('gspot:post:processing', withSchema(PostProcessingSchema, handlePostProcessing));
+  mediator.register('gspot:post:failed', withSchema(PostFailedSchema, handlePostFailed));
 
+  // Subscribe to Redis events
   await redis.pSubscribe('gspot:*', async (message, channel) => {
     console.log('Received message from Redis channel:', channel, message);
     try {
@@ -50,44 +43,16 @@ async function start() {
     }
   });
 
-  // Simple HTTP health endpoint
-  const server = http.createServer(async (req, res) => {
-    if (req.method === 'GET' && req.url === '/health') {
-      // Check Postgres
-      try {
-        await query('SELECT 1');
-      } catch (err) {
-        console.error('DB health check failed', err);
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ status: 'fail', reason: 'db' }));
-        return;
-      }
-
-      // Check Redis
-      try {
-        const pong = await redisHealth.ping();
-        if (!pong) throw new Error('No PONG');
-      } catch (err) {
-        console.error('Redis health check failed', err);
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ status: 'fail', reason: 'redis' }));
-        return;
-      }
-
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ status: 'ok' }));
-      return;
-    }
-
-    res.writeHead(404);
-    res.end();
-  });
-
+  // Start HTTP health server
+  const server = createHealthServer(redisHealth);
   server.listen(PORT, () => {
     console.log(`Health endpoint listening on http://0.0.0.0:${PORT}/health`);
   });
 
-  // Keep process alive and cleanup on shutdown
+  // Schedule cron jobs
+  //cron.schedule("* * * * *", runUserCronJob);
+
+  // Graceful shutdown
   process.on('SIGINT', shutdown);
   process.on('SIGTERM', shutdown);
 
@@ -117,6 +82,12 @@ async function start() {
     try {
       await dbclose();
     } catch (e) {
+      console.error('Error disconnecting redis publisher client', e);
+    }
+    try {
+      await redisPublisher.disconnect();
+    }
+    catch (e) {
       console.error('Error closing pool', e);
     }
     process.exit(0);
