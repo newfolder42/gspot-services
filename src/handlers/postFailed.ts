@@ -1,5 +1,4 @@
 import { PostFailed } from '../types/post-failed';
-import { getConnecters } from '../lib/connectiosn';
 import { createNotification } from '../lib/notifications';
 
 export default async function handlePostFailed(event: PostFailed) {

@@ -4,7 +4,7 @@ import { dbclose } from './lib/db';
 import { initializeRedis } from './lib/redis';
 import { createHealthServer } from './lib/healthServer';
 import { withSchema } from './lib/validation';
-import { runUserCronJob } from './lib/cron';
+import { runEmailSenderForUnseenNotifications } from './jobs/emailSenderForUnseenNotifications';
 import { PostGuessedSchema } from './types/post-guesed';
 import { PostPublishedSchema } from './types/post-published';
 import { Mediator } from './mediator';
@@ -50,7 +50,7 @@ async function start() {
   });
 
   // Schedule cron jobs
-  //cron.schedule("* * * * *", runUserCronJob);
+  cron.schedule("*/1 * * * *", runEmailSenderForUnseenNotifications);
 
   // Graceful shutdown
   process.on('SIGINT', shutdown);

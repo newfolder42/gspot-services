@@ -17,6 +17,7 @@ jobs:
       POSTGRES_SSL: true
       SSH_USER: bitnami
       DEPLOYMENT_DIR: /home/bitnami/gspot
+      EMAIL_PROVIDER: resend
 
     steps:
       - name: Checkout
@@ -116,6 +117,8 @@ jobs:
             echo "POSTGRES_SSL=${{ env.POSTGRES_SSL }}" >> $ENV_FILE
             echo "REDIS_URL=${{ secrets.REDIS_URL }}" >> $ENV_FILE
             echo "PORT=${{ env.PORT }}" >> $ENV_FILE
+            echo "EMAIL_PROVIDER=${{ env.EMAIL_PROVIDER }}" >> $ENV_FILE
+            echo "EMAIL_PROVIDER_KEY=${{ secrets.EMAIL_PROVIDER_KEY }}" >> $ENV_FILE
             echo "NODE_ENV=production" >> $ENV_FILE
             node -v || (echo "Node missing" && exit 1)
             npm ci --production
