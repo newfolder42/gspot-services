@@ -14,6 +14,8 @@ import { PostProcessingSchema } from "./types/post-processing";
 import handlePostProcessing from "./handlers/postProcessing";
 import { PostFailedSchema } from "./types/post-failed";
 import handlePostFailed from "./handlers/postFailed";
+import handleNewConnection from "./handlers/userConnectionCreated";
+import { UserConnectionCreatedSchema } from "./types/user-connection-created";
 
 dotenv.config();
 
@@ -32,6 +34,7 @@ async function start() {
   mediator.register('gspot:post:guessed', withSchema(PostGuessedSchema, postGuessedHandler));
   mediator.register('gspot:post:processing', withSchema(PostProcessingSchema, handlePostProcessing));
   mediator.register('gspot:post:failed', withSchema(PostFailedSchema, handlePostFailed));
+  mediator.register('gspot:user_connection:created', withSchema(UserConnectionCreatedSchema, handleNewConnection));
 
   // Subscribe to Redis events
   await redis.pSubscribe('gspot:*', async (message, channel) => {
@@ -49,8 +52,8 @@ async function start() {
     console.log(`Health endpoint listening on http://0.0.0.0:${PORT}/health`);
   });
 
-  // Schedule cron jobs
-  cron.schedule("*/1 * * * *", runEmailSenderForUnseenNotifications);
+  // Schedule cron jobs (every 5 minute between 10:00 and 22:59)
+  cron.schedule("*/5 10-22 * * *", runEmailSenderForUnseenNotifications);
 
   // Graceful shutdown
   process.on('SIGINT', shutdown);

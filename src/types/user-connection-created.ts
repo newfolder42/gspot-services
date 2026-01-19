@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const PostGuessedSchema = z.object({
+export const UserConnectionCreatedSchema = z.object({
   resource: z.literal('user_connection'),
   action: z.literal('created'),
   createdAt: z.string(),
@@ -12,4 +12,4 @@ export const PostGuessedSchema = z.object({
   }),
 });
 
-export type UserConnectionCreatedEvent = z.infer<typeof PostGuessedSchema>;
+export type UserConnectionCreatedEvent = z.infer<typeof UserConnectionCreatedSchema>;
