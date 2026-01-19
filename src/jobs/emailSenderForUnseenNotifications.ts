@@ -4,10 +4,10 @@ import { sendUnseenNotification } from '../lib/email';
 function buildNotificationText(type: string, details: any): string {
   switch (type) {
     case 'gps-guess':
-      return `შენს პოსტზე სცადეს გამოცნობა (${details.score} ქულა`;
+      return `შენს პოსტზე სცადეს გამოცნობა (${details.score} ქულა)`;
     
     case 'connection-created-gps-post':
-      return `${details.authorAlias}-მა დაპოსტა: ${details.title}'}`;
+      return `${details.authorAlias}-მა დაპოსტა: '${details.title}'`;
     
     case 'user-started-following':
       return `გილოცავ, თქვენ შეგეძინათ ახალი ფოლოვერი!\n\n${JSON.stringify(details)}`;
