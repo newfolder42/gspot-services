@@ -5,6 +5,7 @@ import { initializeRedis } from './lib/redis';
 import { createHealthServer } from './lib/healthServer';
 import { withSchema } from './lib/validation';
 import { runEmailSenderForUnseenNotifications } from './jobs/emailSenderForUnseenNotifications';
+import { runDeletePendingRegistrations } from './jobs/deletePendingRegistrations';
 import { PostGuessedSchema } from './types/post-guesed';
 import { PostPublishedSchema } from './types/post-published';
 import { Mediator } from './mediator';
@@ -54,6 +55,9 @@ async function start() {
 
   // Schedule cron jobs (every 5 minute between 10:00 and 22:59)
   cron.schedule("*/5 10-22 * * *", runEmailSenderForUnseenNotifications);
+
+  // Schedule deletion of stale pending registrations (every minute)
+  cron.schedule('* * * * *', runDeletePendingRegistrations);
 
   // Graceful shutdown
   process.on('SIGINT', shutdown);
