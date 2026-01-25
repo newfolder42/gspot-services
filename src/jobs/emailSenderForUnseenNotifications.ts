@@ -7,10 +7,10 @@ function buildNotificationText(type: string, details: any): string {
       return `შენს პოსტზე სცადეს გამოცნობა (${details.score} ქულა)`;
     
     case 'connection-created-gps-post':
-      return `${details.authorAlias}-მა დაპოსტა: '${details.title}'`;
+      return `${details.authorAlias}-მა ახალი პოსტი გამოაქვეყნა'${details.title ? '' : ': ' + details.title}'`;
     
     case 'user-started-following':
-      return `გილოცავ, თქვენ შეგეძინათ ახალი ფოლოვერი!\n\n${JSON.stringify(details)}`;
+      return `გილოცავ, თქვენ შეგეძინათ ახალი ფოლოვერი!\n\n${details.followerAlias}`;
     
     default:
       return `წაუკითხავი ნოტიფიკაცია`;
