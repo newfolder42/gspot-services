@@ -1,5 +1,5 @@
-import { PostFailed } from '../types/post-failed';
-import { createNotification } from '../lib/notifications';
+import { PostFailed } from '../../types/post-failed';
+import { createNotification } from '../../lib/notifications';
 
 export default async function handlePostFailed(event: PostFailed) {
   const payload = event.payload;

@@ -9,14 +9,15 @@ import { runDeletePendingRegistrations } from './jobs/deletePendingRegistrations
 import { PostGuessedSchema } from './types/post-guesed';
 import { PostPublishedSchema } from './types/post-published';
 import { Mediator } from './mediator';
-import postCreatedHandler from './handlers/postPublished';
-import postGuessedHandler from './handlers/postGuessed';
+import handlePostGuessedLeaderboard from './handlers/handlePostGuessedLeaderboard';
+import postGuessedHandler from './handlers/notifications/postGuessed';
 import { PostProcessingSchema } from "./types/post-processing";
 import handlePostProcessing from "./handlers/postProcessing";
 import { PostFailedSchema } from "./types/post-failed";
-import handlePostFailed from "./handlers/postFailed";
-import handleNewConnection from "./handlers/userConnectionCreated";
+import handlePostFailed from "./handlers/notifications/postFailed";
+import handleNewConnection from "./handlers/notifications/userConnectionCreated";
 import { UserConnectionCreatedSchema } from "./types/user-connection-created";
+import handlePostPublished from "./handlers/notifications/postPublished";
 
 dotenv.config();
 
@@ -31,7 +32,8 @@ async function start() {
 
   // Setup event mediator
   const mediator = new Mediator();
-  mediator.register('gspot:post:published', withSchema(PostPublishedSchema, postCreatedHandler));
+  mediator.register('gspot:post:published', withSchema(PostPublishedSchema, handlePostPublished));
+  mediator.register('gspot:post:guessed', withSchema(PostGuessedSchema, handlePostGuessedLeaderboard));
   mediator.register('gspot:post:guessed', withSchema(PostGuessedSchema, postGuessedHandler));
   mediator.register('gspot:post:processing', withSchema(PostProcessingSchema, handlePostProcessing));
   mediator.register('gspot:post:failed', withSchema(PostFailedSchema, handlePostFailed));

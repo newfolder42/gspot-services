@@ -1,6 +1,6 @@
-import { query } from '../lib/db';
-import { createNotification } from '../lib/notifications';
-import { UserConnectionCreatedEvent } from '../types/user-connection-created';
+import { query } from '../../lib/db';
+import { createNotification } from '../../lib/notifications';
+import { UserConnectionCreatedEvent } from '../../types/user-connection-created';
 
 export default async function handleNewConnection(event: UserConnectionCreatedEvent) {
   const payload = event.payload;

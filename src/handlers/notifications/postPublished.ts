@@ -1,6 +1,6 @@
-import { PostPublished } from '../types/post-published';
-import { getConnecters } from '../lib/connectiosn';
-import { createNotification } from '../lib/notifications';
+import { PostPublished } from '../../types/post-published';
+import { getConnecters } from '../../lib/connectiosn';
+import { createNotification } from '../../lib/notifications';
 
 export default async function handlePostPublished(event: PostPublished) {
   const payload = event.payload;
