@@ -5,7 +5,7 @@ export default async function handlePostGuessedLeaderboard(event: PostGuessed) {
   const payload = event.payload;
 
   const leaderboardType = 'gps-guessers';
-  const userId = payload.authorId;
+  const userId = payload.userId;
   const ratingDelta = payload.score;
 
   try {
