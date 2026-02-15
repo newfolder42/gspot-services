@@ -32,9 +32,11 @@ export async function runEmailSenderForUnseenNotifications() {
         u.name
       FROM user_notifications un
       JOIN users u ON un.user_id = u.id
+      JOIN user_options uo ON u.id = uo.user_id
       WHERE (un.seen = 0 OR un.seen IS NULL)
         AND un.created_at < NOW() - INTERVAL '12 hours'
         AND un.type IN ('gps-guess', 'connection-created-gps-post', 'user-started-following')
+        AND COALESCE((uo.notifications->>'email')::boolean, true) = true
         AND NOT EXISTS (
           SELECT 1 FROM user_notification_reminds
           WHERE notification_id = un.id
