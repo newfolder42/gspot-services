@@ -6,6 +6,7 @@ import { createHealthServer } from './lib/healthServer';
 import { withSchema } from './lib/validation';
 import { runEmailSenderForUnseenNotifications } from './jobs/emailSenderForUnseenNotifications';
 import { runDeletePendingRegistrations } from './jobs/deletePendingRegistrations';
+import { deleteOldNotifications } from './jobs/deleteOldNotifications';
 import { PostGuessedSchema } from './types/post-guesed';
 import { PostPublishedSchema } from './types/post-published';
 import { Mediator } from './mediator';
@@ -60,6 +61,9 @@ async function start() {
 
   // Schedule deletion of stale pending registrations (every minute)
   cron.schedule('* * * * *', runDeletePendingRegistrations);
+
+  // Schedule deletion of old notifications (daily at midnight)
+  cron.schedule('0 0 * * *', deleteOldNotifications);
 
   // Graceful shutdown
   process.on('SIGINT', shutdown);
