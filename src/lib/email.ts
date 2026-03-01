@@ -91,7 +91,7 @@ export async function sendUnseenNotification(email: string, notificationText: st
             </h1>
           </div>
           <div class="content">
-            <p>თქვენ გაქვთ წაუკითხავი ნოთიფიკაცია!</p>
+            <p>შენ გაქვს წაუკითხავი ნოთიფიკაცია!</p>
             <div class="notification-text">
               ${notificationText}
             </div>

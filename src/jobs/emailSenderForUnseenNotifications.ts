@@ -10,7 +10,7 @@ function buildNotificationText(type: string, details: any): string {
       return `${details.authorAlias}-მა ახალი პოსტი გამოაქვეყნა'${details.title ? '' : ': ' + details.title}'`;
     
     case 'user-started-following':
-      return `გილოცავ, თქვენ შეგეძინათ ახალი ფოლოვერი!\n\n${details.followerAlias}`;
+      return `გილოცავ, შენ შეგეძინა ახალი ფოლოვერი!\n\n${details.followerAlias}`;
     
     default:
       return `წაუკითხავი ნოტიფიკაცია`;
