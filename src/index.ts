@@ -19,6 +19,10 @@ import handlePostFailed from "./handlers/notifications/postFailed";
 import handleNewConnection from "./handlers/notifications/userConnectionCreated";
 import { UserConnectionCreatedSchema } from "./types/user-connection-created";
 import handlePostPublished from "./handlers/notifications/postPublished";
+import handleXpForPostGuessed from "./handlers/xp/handleXpForPostGuessed";
+import handleXpForPostPublished from "./handlers/xp/handleXpForPostPublished";
+import { PostDeletedSchema } from "./types/post-deleted";
+import handleXpForPostDeleted from "./handlers/xp/handleXpForPostDeleted";
 
 dotenv.config();
 
@@ -39,6 +43,11 @@ async function start() {
   mediator.register('gspot:post:processing', withSchema(PostProcessingSchema, handlePostProcessing));
   mediator.register('gspot:post:failed', withSchema(PostFailedSchema, handlePostFailed));
   mediator.register('gspot:user_connection:created', withSchema(UserConnectionCreatedSchema, handleNewConnection));
+
+  //xp handlers
+  mediator.register('gspot:post:guessed', withSchema(PostGuessedSchema, handleXpForPostGuessed));
+  mediator.register('gspot:post:published', withSchema(PostPublishedSchema, handleXpForPostPublished));
+  mediator.register('gspot:post:deleted', withSchema(PostDeletedSchema, handleXpForPostDeleted));
 
   // Subscribe to Redis events
   await redis.pSubscribe('gspot:*', async (message, channel) => {
