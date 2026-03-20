@@ -23,6 +23,15 @@ import handleXpForPostGuessed from "./handlers/xp/handleXpForPostGuessed";
 import handleXpForPostPublished from "./handlers/xp/handleXpForPostPublished";
 import { PostDeletedSchema } from "./types/post-deleted";
 import handleXpForPostDeleted from "./handlers/xp/handleXpForPostDeleted";
+import handleUserConnectionAchievements from "./handlers/achievements/handleUserConnectionAchievements";
+import handleProfilePhotoAchievement from "./handlers/achievements/handleProfilePhotoAchievement";
+import handlePostPublishedAchievements from "./handlers/achievements/handlePostPublishedAchievements";
+import handlePostGuessedAchievements from "./handlers/achievements/handlePostGuessedAchievements";
+import { UserProfilePhotoChangedSchema } from "./types/user-profile-photo-changed";
+import { UserLevelChangedSchema } from "./types/user-level-changed";
+import handleUserLevelChangedAchievements from "./handlers/achievements/handleUserLevelChangedAchievements";
+import { UserAchievementAchievedSchema } from "./types/user-achievement-achieved";
+import handleUserAchievementAchieved from "./handlers/notifications/userAchievementAchieved";
 
 dotenv.config();
 
@@ -43,11 +52,20 @@ async function start() {
   mediator.register('gspot:post:processing', withSchema(PostProcessingSchema, handlePostProcessing));
   mediator.register('gspot:post:failed', withSchema(PostFailedSchema, handlePostFailed));
   mediator.register('gspot:user_connection:created', withSchema(UserConnectionCreatedSchema, handleNewConnection));
+  mediator.register('gspot:user_achievement:achieved', withSchema(UserAchievementAchievedSchema, handleUserAchievementAchieved));
 
   //xp handlers
   mediator.register('gspot:post:guessed', withSchema(PostGuessedSchema, handleXpForPostGuessed));
   mediator.register('gspot:post:published', withSchema(PostPublishedSchema, handleXpForPostPublished));
   mediator.register('gspot:post:deleted', withSchema(PostDeletedSchema, handleXpForPostDeleted));
+
+  // achievement handlers
+  mediator.register('gspot:user_connection:created', withSchema(UserConnectionCreatedSchema, handleUserConnectionAchievements));
+  mediator.register('gspot:user_profile_photo:changed', withSchema(UserProfilePhotoChangedSchema, handleProfilePhotoAchievement));
+  mediator.register('gspot:post:published', withSchema(PostPublishedSchema, handlePostPublishedAchievements));
+  mediator.register('gspot:post:guessed', withSchema(PostGuessedSchema, handlePostGuessedAchievements));
+  mediator.register('gspot:user:level-up', withSchema(UserLevelChangedSchema, handleUserLevelChangedAchievements));
+  mediator.register('gspot:user:level-down', withSchema(UserLevelChangedSchema, handleUserLevelChangedAchievements));
 
   // Subscribe to Redis events
   await redis.pSubscribe('gspot:*', async (message, channel) => {
