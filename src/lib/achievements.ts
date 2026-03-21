@@ -12,6 +12,7 @@ type AchievementDefinition = {
   milestones: Array<{
     id: number;
     key: string;
+    name: string;
     targetValue: number;
   }>;
 };
@@ -92,7 +93,7 @@ async function getAchievementDefinition(key: string): Promise<AchievementDefinit
 
   const achievementRow = achievementRes.rows[0];
   const milestonesRes = await query(
-    `SELECT id, key, target_value
+    `SELECT id, key, name, target_value
      FROM achievement_milestones
      WHERE achievement_id = $1
      ORDER BY target_value ASC, sort_order ASC, id ASC`,
@@ -107,6 +108,7 @@ async function getAchievementDefinition(key: string): Promise<AchievementDefinit
     milestones: milestonesRes.rows.map((row) => ({
       id: Number(row.id),
       key: String(row.key),
+      name: String(row.name),
       targetValue: Number(row.target_value),
     })),
   };
@@ -159,19 +161,30 @@ async function unlockMilestones(
   if ((insertResult.rowCount ?? 0) === 0) return;
 
   const ids = insertResult.rows.map((row) => Number(row.milestone_id));
-  const keyResult = await query(
-    `SELECT key
+  const milestoneResult = await query(
+    `SELECT key, name
      FROM achievement_milestones
      WHERE id = ANY($1::bigint[])`,
     [ids]
   );
 
-  for (const row of keyResult.rows) {
+  for (const row of milestoneResult.rows) {
     console.log('Achievement milestone unlocked', {
       userId,
       achievementKey: definition.key,
       milestoneKey: row.key,
       currentValue,
+    });
+
+    await publish('user_achievement', 'achieved', {
+      userId,
+      achievementKey: definition.key,
+      achievementName: definition.name,
+      achievementType: definition.achievementType,
+      milestoneKey: row.key,
+      milestoneName: row.name,
+      currentValue,
+      achievedAt: unlockTime,
     });
   }
 }
@@ -231,6 +244,7 @@ export async function awardOneTimeAchievement(
       userId,
       achievementKey,
       achievementName: definition.name,
+      achievementType: definition.achievementType,
       achievedAt: achievedAtIso,
     });
   });
@@ -324,6 +338,7 @@ export async function updateProgressiveAchievement(input: UpdateProgressiveInput
         userId,
         achievementKey,
         achievementName: definition.name,
+        achievementType: definition.achievementType,
         currentValue: nextValue,
         achievedAt: nextAchievedAt,
       });
