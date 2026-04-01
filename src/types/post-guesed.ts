@@ -12,6 +12,8 @@ export const PostGuessedSchema = z.object({
     userId: z.number(),
     userAlias: z.string(),
     score: z.number(),
+    zoneId: z.number(),
+    zoneSlug: z.string(),
   }),
 });
 

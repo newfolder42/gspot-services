@@ -9,6 +9,8 @@ export const PostDeletedSchema = z.object({
     postType: z.string(),
     authorId: z.number(),
     authorAlias: z.string(),
+    zoneId: z.number(),
+    zoneSlug: z.string(),
   }),
 });
 
