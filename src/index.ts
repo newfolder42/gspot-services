@@ -32,6 +32,8 @@ import { UserLevelChangedSchema } from "./types/user-level-changed";
 import handleUserLevelChangedAchievements from "./handlers/achievements/handleUserLevelChangedAchievements";
 import { UserAchievementAchievedSchema } from "./types/user-achievement-achieved";
 import handleUserAchievementAchieved from "./handlers/notifications/userAchievementAchieved";
+import { PostCommentCreatedSchema } from './types/post-comment-created';
+import handlePostCommentCreated from './handlers/notifications/postCommentCreated';
 
 dotenv.config();
 
@@ -53,6 +55,7 @@ async function start() {
   mediator.register('gspot:post:failed', withSchema(PostFailedSchema, handlePostFailed));
   mediator.register('gspot:user_connection:created', withSchema(UserConnectionCreatedSchema, handleNewConnection));
   mediator.register('gspot:user_achievement:achieved', withSchema(UserAchievementAchievedSchema, handleUserAchievementAchieved));
+  mediator.register('gspot:post:comment-created', withSchema(PostCommentCreatedSchema, handlePostCommentCreated));
 
   //xp handlers
   mediator.register('gspot:post:guessed', withSchema(PostGuessedSchema, handleXpForPostGuessed));
