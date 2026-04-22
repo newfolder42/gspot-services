@@ -7,7 +7,11 @@ export const PostCommentCreatedSchema = z.object({
   payload: z.object({
     postId: z.number(),
     commentId: z.number(),
-    parentId: z.number().nullable().optional(),
+    parent: z.object({
+      id: z.number(),
+      commenterId: z.number(),
+      commenterAlias: z.string()
+    }).nullable().optional(),
     postAuthorId: z.number(),
     postAuthorAlias: z.string(),
     commenterId: z.number(),
