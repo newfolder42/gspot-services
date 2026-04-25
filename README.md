@@ -1,47 +1,183 @@
-# GSpot Services (sample)
+# gspot-services
 
-Short demo Node.js + TypeScript service that subscribes to a Redis channel and writes events to PostgreSQL.
+Event-driven background service for the GSpot platform. Subscribes to Redis Pub/Sub channels, validates incoming events with Zod schemas, and fans them out to typed handlers that write notifications, XP changes, and achievements to PostgreSQL.
 
-## Tech choices ✅
-- TypeScript (recommended): better type-safety, maintainability, and IDE support.
-- Redis Pub/Sub for a simple queue subscription model.
-- PostgreSQL for persistence.
-- PM2 or systemd for process supervision on the Lightsail instance.
-- GitHub Actions for CI/CD; deploy via SSH to the Lightsail instance.
+---
 
-## Quick start (local)
-1. Copy `.env.example` to `.env` and fill your values.
-2. Install deps: `npm ci`
-3. Build: `npm run build`
-4. Run local (for development): `npm run dev` (requires `ts-node-dev`)
-5. Run migration to create the sample `events` table: `npm run migrate` (after build)
+## Architecture overview
 
-## Healthcheck
-The service exposes a simple HTTP health endpoint at `/health` (default port `3001` or set via `PORT` env). The endpoint verifies both PostgreSQL and Redis connectivity and returns HTTP 200 with `{ "status": "ok" }` when healthy, or HTTP 500 with a reason if either check fails. Use this endpoint for simple monitoring or load balancer health checks.
+```
+Redis (gspot:* channels)
+        │
+        ▼
+   Mediator (channel → []Handler)
+        │
+        ├── Notifications  (createNotification → Postgres)
+        ├── XP             (award / revoke XP → Postgres)
+        ├── Achievements   (unlock checks → Postgres)
+        └── Leaderboard    (update rankings → Postgres)
 
-## Deployment (Lightsail / Bitnami)
-1. Ensure Node (>=18), npm, Redis and PostgreSQL are installed and reachable.
-2. Create a deploy user and a directory (e.g. `/opt/gspot`), and set appropriate permissions.
-3. Create systemd unit (`deploy/gspot.service`) or use PM2 with `ecosystem.config.js`.
-4. Use the included GitHub Action (`.github/workflows/deploy.yml`) to deploy on push to `main`.
+Cron jobs run alongside the subscriber loop:
+  - Delete old notifications
+  - Delete expired pending registrations
+  - Email unseen notifications
+```
 
-### GitHub Action Secrets
-- `SSH_HOST`, `SSH_USERNAME`, `SSH_PRIVATE_KEY`, `SSH_PORT` (optional), `REMOTE_DIR`.
+All incoming messages are parsed with **Zod** before reaching a handler. Invalid payloads are logged and dropped — they never reach business logic.
 
-## Redis behavior
-The service subscribes to the channel defined in `REDIS_CHANNEL` (default `gspot:queue`). Publish JSON messages to that channel; incoming messages will be parsed and inserted into `events.payload` JSONB column.
+---
 
-## Why TypeScript?
-- Strong typing prevents many bugs at compile time.
-- Great tooling and refactors (VS Code).
-- Easy incremental adoption: you can start with plain JS and migrate files to `.ts` as you go, but starting with TS is recommended.
+## Tech stack
 
-## Notes for AWS Lightsail (Bitnami)
-- Bitnami stacks may run services as `bitnami` user; adjust `deploy/gspot.service` and `REMOTE_DIR` accordingly.
-- Keep Redis local to the instance (fast, simple), and expose only necessary ports.
+| Layer | Choice |
+|---|---|
+| Runtime | Node.js ≥ 18, TypeScript 5 |
+| Message bus | Redis 8 (Pub/Sub, pattern subscribe `gspot:*`) |
+| Database | PostgreSQL (via `pg`) |
+| Validation | Zod |
+| Scheduling | node-cron |
+| Process supervisor | systemd (`deploy/gspot.service`) or PM2 (`ecosystem.config.js`) |
 
-## Next steps / improvements
-- Add tests and a schema migration manager (e.g., node-pg-migrate).
-- Use Redis Streams for reliable consumer groups and persist offsets.
-- Add health monitoring, logging, and alerting integration.
+---
+
+## Relationship with gspot-web
+
+[gspot-web](https://github.com/newfolder42/gspot-web) is the main Next.js application. It publishes events to Redis via `lib/eventBus.ts` whenever significant things happen (post published, guess submitted, comment created, etc.). This service (`gspot-services`) is the consumer — it subscribes to those channels and handles all side effects asynchronously, keeping them out of the web request lifecycle.
+
+```
+gspot-web  ──publish──▶  Redis (gspot:* channels)  ──subscribe──▶  gspot-services
+```
+
+Both services share the same PostgreSQL database and Redis instance. They do not communicate with each other directly.
+
+---
+
+## Redis channels and handlers
+
+| Channel | Handlers |
+|---|---|
+| `gspot:post:published` | notification → post author, XP award, achievement checks |
+| `gspot:post:guessed` | notification → guesser, leaderboard update, XP award, achievement checks |
+| `gspot:post:processing` | post-processing side effects |
+| `gspot:post:failed` | failure notification |
+| `gspot:post:deleted` | XP revocation |
+| `gspot:post:comment-created` | comment notification (author or parent commenter) |
+| `gspot:user_connection:created` | connection notification, achievement checks |
+| `gspot:user_achievement:achieved` | achievement unlocked notification |
+| `gspot:user_profile_photo:changed` | profile photo achievement check |
+| `gspot:user:level-up` | level-change achievement checks |
+| `gspot:user:level-down` | level-change achievement checks |
+
+A single channel can have multiple handlers. They run sequentially; a failure in one handler does not block the others.
+
+### Comment notification logic
+
+- **Base comment** (no parent): the post author is notified, unless they wrote the comment themselves.
+- **Reply** (parent set): only the parent commenter is notified, unless they wrote this reply themselves.
+
+---
+
+## Environment variables
+
+Copy `.env.example` to `.env` and fill in the values.
+
+| Variable | Default | Description |
+|---|---|---|
+| `DATABASE_URL` | — | PostgreSQL connection string |
+| `REDIS_URL` | `redis://localhost:6379` | Redis connection URL |
+| `PORT` | `3001` | Health server port |
+| `SMTP_*` | — | SMTP credentials for the email job |
+
+---
+
+## Local development
+
+```bash
+# 1. Start Redis
+docker compose up -d
+
+# 2. Install dependencies
+cd src
+npm ci
+
+# 3. Start with hot-reload
+npm run dev
+```
+
+`npm run dev` uses `ts-node-dev` with `--respawn --transpile-only` — no build step needed.
+
+---
+
+## Production build
+
+```bash
+cd src
+npm ci
+npm run build      # tsc → dist/
+npm start          # node dist/index.js
+```
+
+---
+
+## Health endpoint
+
+```
+GET /health   →   200 { "status": "ok" }
+              →   500 { "status": "fail", "reason": "db" | "redis" }
+```
+
+Checks both PostgreSQL (`SELECT 1`) and Redis (`PING`) on every request. Use this for load balancer or uptime-monitor health checks.
+
+---
+
+## Deployment (AWS Lightsail / Bitnami)
+
+### systemd
+
+```bash
+sudo cp deploy/gspot.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now gspot
+```
+
+The unit file expects the build output at `/home/bitnami/gspot/dist/` and reads env from `/home/bitnami/gspot/.env`.
+
+### PM2
+
+```bash
+cd /home/bitnami/gspot
+pm2 start src/ecosystem.config.js
+pm2 save
+```
+
+### CI/CD (GitHub Actions)
+
+The deploy workflow SSHs into the server, pulls the latest build, and restarts the service. Required secrets:
+
+| Secret | Description |
+|---|---|
+| `SSH_HOST` | Server IP or hostname |
+| `SSH_USERNAME` | SSH user |
+| `SSH_PRIVATE_KEY` | Private key for SSH auth |
+| `SSH_PORT` | SSH port (optional, defaults to 22) |
+| `REMOTE_DIR` | Absolute path to the app on the server |
+
+---
+
+## Project structure
+
+```
+src/
+  index.ts                  # Entry point: wires Redis, Mediator, cron jobs, health server
+  mediator.ts               # Channel-to-handler fan-out (Mediator pattern)
+  handlers/
+    notifications/          # Per-event notification creators
+    xp/                     # XP award and revocation handlers
+    achievements/           # Achievement unlock handlers
+    handlePostGuessedLeaderboard.ts
+    postProcessing.ts
+  jobs/                     # Cron jobs (emails, cleanup)
+  lib/                      # Shared utilities: db, redis, notifications, xp, achievements, email
+  types/                    # Zod schemas + inferred TypeScript types per event
+```
 
