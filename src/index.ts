@@ -7,6 +7,7 @@ import { withSchema } from './lib/validation';
 import { runEmailSenderForUnseenNotifications } from './jobs/emailSenderForUnseenNotifications';
 import { runDeletePendingRegistrations } from './jobs/deletePendingRegistrations';
 import { deleteOldNotifications } from './jobs/deleteOldNotifications';
+import { reorderZoneTagsByUsage } from './jobs/reorderZoneTagsByUsage';
 import { PostGuessedSchema } from './types/post-guesed';
 import { PostPublishedSchema } from './types/post-published';
 import { Mediator } from './mediator';
@@ -94,6 +95,9 @@ async function start() {
 
   // Schedule deletion of old notifications (daily at midnight)
   cron.schedule('0 0 * * *', deleteOldNotifications);
+
+  // Recalculate zone tag ordering by usage every 30 minutes during daytime
+  cron.schedule('*/30 10-22 * * *', reorderZoneTagsByUsage);
 
   // Graceful shutdown
   process.on('SIGINT', shutdown);
