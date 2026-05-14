@@ -17,7 +17,7 @@ export default async function handlePostGuessedAchievements(event: PostGuessed) 
       currentValue: guessesTotal,
     });
 
-    if (event.payload.score === 100) {
+    if (event.payload.score >= 100) {
       const perfectGuessesTotal = await getPerfectGuessesTotalCount(userId);
       await updateProgressiveAchievement({
         userId,

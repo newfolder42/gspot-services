@@ -21,10 +21,11 @@ export async function getXpTable(): Promise<number[]> {
 }
 
 export const xpActionDictionary: Record<string, number> = {
-  'post-guessed': 50, // User guessed a post
-  'post-being-guessed': 10, // User's post was guessed by someone else
-  'post-published': 100, // User published a post
-  'post-deleted': -100, // User deleted a post
+  'post-guessed': 50,
+  'post-guessed-by-photo': 100,
+  'post-being-guessed': 10,
+  'post-published': 100,
+  'post-deleted': -100,
 };
 
 export type XPInfo = {
@@ -59,7 +60,7 @@ export async function getLevelFromXp(totalXP: number): Promise<XPInfo> {
   }
 
   const levelStartXP = xpTable[level - 1];
-  const levelEndXP = level < xpTable.length ? xpTable[level] : levelStartXP + 1000; // If max level, add arbitrary amount
+  const levelEndXP = level < xpTable.length ? xpTable[level] : levelStartXP + 1000;
   const currentXP = totalXP - levelStartXP;
   const xpForNextLevel = levelEndXP - levelStartXP;
 

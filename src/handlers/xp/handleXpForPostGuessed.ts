@@ -7,7 +7,7 @@ export default async function handleXpForPostGuessed(event: PostGuessed) {
   try {
     await increaseUserXp({
       userId: event.payload.userId,
-      action: 'post-guessed',
+      action: payload.guessType ==  'gps-guess' ? 'post-guessed' : 'post-guessed-by-photo',
       details: { postId: payload.postId, score: payload.score }
     });
     await increaseUserXp({

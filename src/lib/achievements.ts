@@ -373,7 +373,7 @@ export async function getPerfectGuessesTotalCount(userId: number): Promise<numbe
     `SELECT COUNT(*)::int AS total
      FROM post_guesses
      WHERE user_id = $1
-       AND COALESCE((details->>'score')::int, 0) = 100`,
+       AND COALESCE((details->>'score')::int, 0) >= 100`,
     [userId]
   );
 
