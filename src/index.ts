@@ -35,6 +35,8 @@ import { UserAchievementAchievedSchema } from "./types/user-achievement-achieved
 import handleUserAchievementAchieved from "./handlers/notifications/userAchievementAchieved";
 import { PostCommentCreatedSchema } from './types/post-comment-created';
 import handlePostCommentCreated from './handlers/notifications/postCommentCreated';
+import { ZoneMemberAddedSchema } from "./types/zonemember-added";
+import handlezoneMemberCreated from "./handlers/notifications/zoneMemberCreated";
 
 dotenv.config();
 
@@ -57,6 +59,7 @@ async function start() {
   mediator.register('gspot:user_connection:created', withSchema(UserConnectionCreatedSchema, handleNewConnection));
   mediator.register('gspot:user_achievement:achieved', withSchema(UserAchievementAchievedSchema, handleUserAchievementAchieved));
   mediator.register('gspot:post:comment-created', withSchema(PostCommentCreatedSchema, handlePostCommentCreated));
+  mediator.register('gspot:zone_member:added', withSchema(ZoneMemberAddedSchema, handlezoneMemberCreated));
 
   //xp handlers
   mediator.register('gspot:post:guessed', withSchema(PostGuessedSchema, handleXpForPostGuessed));
