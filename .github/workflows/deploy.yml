@@ -120,6 +120,12 @@ jobs:
             echo "EMAIL_PROVIDER=${{ env.EMAIL_PROVIDER }}" >> $ENV_FILE
             echo "EMAIL_PROVIDER_KEY=${{ secrets.EMAIL_PROVIDER_KEY }}" >> $ENV_FILE
             echo "NODE_ENV=production" >> $ENV_FILE
+            # S3 — for the gps-photo image-variant pipeline/backfill (app uploads bucket,
+            # NOT env.S3_BUCKET which is the CI artifacts bucket)
+            echo "AWS_REGION=${{ env.AWS_REGION }}" >> $ENV_FILE
+            echo "S3_BUCKET=gspot-uploads" >> $ENV_FILE
+            echo "AWSS3_ACCESS_KEY_ID=${{ secrets.AWSS3_ACCESS_KEY_ID }}" >> $ENV_FILE
+            echo "AWSS3_SECRET_ACCESS_KEY=${{ secrets.AWSS3_SECRET_ACCESS_KEY }}" >> $ENV_FILE
             node -v || (echo "Node missing" && exit 1)
             npm ci --production
             # install/update systemd unit

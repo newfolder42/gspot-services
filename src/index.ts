@@ -8,6 +8,7 @@ import { runEmailSenderForUnseenNotifications } from './jobs/emailSenderForUnsee
 import { runDeletePendingRegistrations } from './jobs/deletePendingRegistrations';
 import { deleteOldNotifications } from './jobs/deleteOldNotifications';
 import { reorderZoneTagsByUsage } from './jobs/reorderZoneTagsByUsage';
+import { runBackfillGpsPhotoVariants } from './jobs/backfillGpsPhotoVariants';
 import { PostGuessedSchema } from './types/post-guesed';
 import { PostPublishedSchema } from './types/post-published';
 import { Mediator } from './mediator';
@@ -101,6 +102,8 @@ async function start() {
 
   // Recalculate zone tag ordering by usage every 30 minutes during daytime
   cron.schedule('*/30 10-22 * * *', reorderZoneTagsByUsage);
+
+  runBackfillGpsPhotoVariants().catch((err) => console.error('[backfill-variants] unhandled', err));
 
   // Graceful shutdown
   process.on('SIGINT', shutdown);
