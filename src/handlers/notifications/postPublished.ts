@@ -5,9 +5,13 @@ import { createNotification } from '../../lib/notifications';
 export default async function handlePostPublished(event: PostPublished) {
   const payload = event.payload;
 
+  const notificationType = payload.postType === 'quest-completion'
+    ? 'connection-created-quest-post'
+    : 'connection-created-gps-post';
+
   const connections = await getConnecters(payload.authorId);
   for (const connection of connections) {
-    await createNotification(connection.id, 'connection-created-gps-post', {
+    await createNotification(connection.id, notificationType, {
       postId: payload.postId,
       authorId: payload.authorId,
       authorAlias: payload.authorAlias,

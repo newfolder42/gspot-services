@@ -1,4 +1,4 @@
-import { query } from './db';
+import { query, withTransaction } from './db';
 import { publish } from './redis';
 
 export const maxLevel = 42;
@@ -26,6 +26,7 @@ export const xpActionDictionary: Record<string, number> = {
   'post-being-guessed': 10,
   'post-published': 100,
   'post-deleted': -100,
+  'zone_quest_completed': 200,
 };
 
 export type XPInfo = {
@@ -90,27 +91,25 @@ export async function increaseUserXp(
     throw new Error(`Unknown XP action: ${action}`);
   }
 
-  try {
-    const currentLevelResult = await query(
-      `SELECT xp, level FROM user_xp WHERE user_id = $1`,
-      [userId]
-    );
-    const currentTotalXP = currentLevelResult.rows[0]?.xp || 0;
-    const currentLevel = currentLevelResult.rows[0]?.level || 1;
+  const currentLevelResult = await query(
+    `SELECT xp, level FROM user_xp WHERE user_id = $1`,
+    [userId]
+  );
+  const currentTotalXP = currentLevelResult.rows[0]?.xp || 0;
+  const currentLevel = currentLevelResult.rows[0]?.level || 1;
 
-    if (currentLevel >= maxLevel) {
-      return await getLevelFromXp(currentTotalXP);
-    }
+  if (currentLevel >= maxLevel) {
+    return await getLevelFromXp(currentTotalXP);
+  }
 
-    await query('BEGIN');
-    
-    await query(
-      `INSERT INTO user_xp_events (user_id, action, xp, details) 
+  const newTotalXP = await withTransaction(async (client) => {
+    await client.query(
+      `INSERT INTO user_xp_events (user_id, action, xp, details)
          VALUES ($1, $2, $3, $4)`,
       [userId, action, xp, details ? JSON.stringify(details) : null]
     );
 
-    const currentResult = await query(
+    const currentResult = await client.query(
       `INSERT INTO user_xp (user_id, xp, level)
          VALUES ($1, $2, 1)
          ON CONFLICT (user_id) DO UPDATE
@@ -123,41 +122,40 @@ export async function increaseUserXp(
     const newTotalXP = currentResult.rows[0].xp;
     const xpInfo = await getLevelFromXp(newTotalXP);
 
-    await query(
-      `UPDATE user_xp 
+    await client.query(
+      `UPDATE user_xp
          SET level = $1, last_modified_at = current_timestamp
          WHERE user_id = $2`,
       [xpInfo.level, userId]
     );
 
-    await query('COMMIT');
+    return newTotalXP;
+  });
 
-    if (xpInfo.level === currentLevel)
-      return xpInfo;
+  const xpInfo = await getLevelFromXp(newTotalXP);
 
-    if (xpInfo.level > currentLevel) {
-      await publish('user', 'level-up', {
-        userId: userId.toString(),
-        previousLevel: currentLevel,
-        newLevel: xpInfo.level,
-        totalXP: newTotalXP,
-        action,
-      });
-    }
-
-    if (xpInfo.level < currentLevel) {
-      await publish('user', 'level-down', {
-        userId: userId.toString(),
-        previousLevel: currentLevel,
-        newLevel: xpInfo.level,
-        totalXP: newTotalXP,
-        action,
-      });
-    }
-
+  if (xpInfo.level === currentLevel)
     return xpInfo;
-  } catch (error) {
-    await query('ROLLBACK');
-    throw error;
+
+  if (xpInfo.level > currentLevel) {
+    await publish('user', 'level-up', {
+      userId: userId.toString(),
+      previousLevel: currentLevel,
+      newLevel: xpInfo.level,
+      totalXP: newTotalXP,
+      action,
+    });
   }
+
+  if (xpInfo.level < currentLevel) {
+    await publish('user', 'level-down', {
+      userId: userId.toString(),
+      previousLevel: currentLevel,
+      newLevel: xpInfo.level,
+      totalXP: newTotalXP,
+      action,
+    });
+  }
+
+  return xpInfo;
 }

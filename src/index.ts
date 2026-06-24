@@ -37,6 +37,16 @@ import { PostCommentCreatedSchema } from './types/post-comment-created';
 import handlePostCommentCreated from './handlers/notifications/postCommentCreated';
 import { ZoneMemberAddedSchema } from "./types/zonemember-added";
 import handlezoneMemberCreated from "./handlers/notifications/zoneMemberCreated";
+import { ZoneQuestObjectiveSubmittedSchema } from "./types/zone-quest-objective-submitted";
+import handleZoneQuestObjectiveSubmitted from "./handlers/notifications/zoneQuestObjectiveSubmitted";
+import { ZoneQuestObjectiveAcceptedSchema } from "./types/zone-quest-objective-accepted";
+import handleZoneQuestObjectiveAccepted from "./handlers/notifications/zoneQuestObjectiveAccepted";
+import { ZoneQuestObjectiveRejectedSchema } from "./types/zone-quest-objective-rejected";
+import handleZoneQuestObjectiveRejected from "./handlers/notifications/zoneQuestObjectiveRejected";
+import { ZoneQuestCompletedSchema } from "./types/zone-quest-completed";
+import handleZoneQuestCompleted from "./handlers/notifications/zoneQuestCompleted";
+import handleXpForZoneQuestCompleted from "./handlers/xp/handleXpForZoneQuestCompleted";
+import handleZoneQuestCompletedConnections from "./handlers/notifications/zoneQuestCompletedConnections";
 
 dotenv.config();
 
@@ -60,11 +70,17 @@ async function start() {
   mediator.register('gspot:user_achievement:achieved', withSchema(UserAchievementAchievedSchema, handleUserAchievementAchieved));
   mediator.register('gspot:post:comment-created', withSchema(PostCommentCreatedSchema, handlePostCommentCreated));
   mediator.register('gspot:zone_member:added', withSchema(ZoneMemberAddedSchema, handlezoneMemberCreated));
+  mediator.register('gspot:zone_quest_objective:submitted', withSchema(ZoneQuestObjectiveSubmittedSchema, handleZoneQuestObjectiveSubmitted));
+  mediator.register('gspot:zone_quest_objective:accepted', withSchema(ZoneQuestObjectiveAcceptedSchema, handleZoneQuestObjectiveAccepted));
+  mediator.register('gspot:zone_quest_objective:rejected', withSchema(ZoneQuestObjectiveRejectedSchema, handleZoneQuestObjectiveRejected));
+  mediator.register('gspot:zone_quest:completed', withSchema(ZoneQuestCompletedSchema, handleZoneQuestCompleted));
+  mediator.register('gspot:zone_quest:completed', withSchema(ZoneQuestCompletedSchema, handleZoneQuestCompletedConnections));
 
   //xp handlers
   mediator.register('gspot:post:guessed', withSchema(PostGuessedSchema, handleXpForPostGuessed));
   mediator.register('gspot:post:published', withSchema(PostPublishedSchema, handleXpForPostPublished));
   mediator.register('gspot:post:deleted', withSchema(PostDeletedSchema, handleXpForPostDeleted));
+  mediator.register('gspot:zone_quest:completed', withSchema(ZoneQuestCompletedSchema, handleXpForZoneQuestCompleted));
 
   // achievement handlers
   mediator.register('gspot:user_connection:created', withSchema(UserConnectionCreatedSchema, handleUserConnectionAchievements));

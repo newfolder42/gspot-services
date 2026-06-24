@@ -44,7 +44,19 @@ function buildNotificationText(type: string, details: Record<string, any>): stri
       return details.commentType === 'comment'
         ? `${details.commenterAlias}-მა დაგიტოვა კომენტარი პოსტზე`
         : `${details.commenterAlias}-მა დაგიტოვა კომენტარი`;
-    
+
+    case 'zone-quest-objective-submitted':
+      return `${details.submitterAlias}-მა გამოაგზავნა "${details.objectiveTitle}" შესაფასებლად`;
+
+    case 'zone-quest-objective-accepted':
+      return `ამოცანა "${details.objectiveTitle}" დადასტურდა`;
+
+    case 'zone-quest-objective-rejected':
+      return `ამოცანა "${details.objectiveTitle}" დაიწუნა, სცადე თავიდან`;
+
+    case 'zone-quest-completed':
+      return `მისია შესრულებულია: ${details.questTitle}`;
+
     default:
       return `წაუკითხავი ნოტიფიკაცია`;
   }
@@ -73,7 +85,11 @@ export async function runEmailSenderForUnseenNotifications() {
           'connection-created-gps-post',
           'user-started-following',
           'user-achievement-achieved',
-          'post-comment-created'
+          'post-comment-created',
+          'zone-quest-objective-submitted',
+          'zone-quest-objective-accepted',
+          'zone-quest-objective-rejected',
+          'zone-quest-completed'
         )
         AND COALESCE((uo.notifications->>'email')::boolean, true) = true
         AND NOT EXISTS (
