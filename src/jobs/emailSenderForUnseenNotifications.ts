@@ -33,10 +33,10 @@ function buildNotificationText(type: string, details: Record<string, any>): stri
 
     case 'user-achievement-achieved':
       if (details.achievementType === 'progressive') {
-        return `ახალი მიღწევა: ${details.milestoneName ?? 'მაილსტოუნი'}`;
+        return `ახალი მიღწევა: ${details.milestoneName ?? details.achievementName}`;
       }
       if (details.achievementType === 'one_time') {
-        return `ახალი მიღწევა: ${details.achievementName ?? 'მიღწევა'}`;
+        return `ახალი მიღწევა: ${details.achievementName}`;
       }
       return 'ახალი მიღწევა';
 
@@ -56,6 +56,9 @@ function buildNotificationText(type: string, details: Record<string, any>): stri
 
     case 'zone-quest-completed':
       return `მისია შესრულებულია: ${details.questTitle}`;
+
+    case 'zone-quest-created':
+      return `${details.character.name}ს შენთვის ახალი მისია აქვს: ${details.questTitle}`;
 
     default:
       return `წაუკითხავი ნოტიფიკაცია`;
@@ -89,7 +92,8 @@ export async function runEmailSenderForUnseenNotifications() {
           'zone-quest-objective-submitted',
           'zone-quest-objective-accepted',
           'zone-quest-objective-rejected',
-          'zone-quest-completed'
+          'zone-quest-completed',
+          'zone-quest-created'
         )
         AND COALESCE((uo.notifications->>'email')::boolean, true) = true
         AND NOT EXISTS (

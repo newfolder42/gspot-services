@@ -47,6 +47,8 @@ import { ZoneQuestCompletedSchema } from "./types/zone-quest-completed";
 import handleZoneQuestCompleted from "./handlers/notifications/zoneQuestCompleted";
 import handleXpForZoneQuestCompleted from "./handlers/xp/handleXpForZoneQuestCompleted";
 import handleZoneQuestCompletedConnections from "./handlers/notifications/zoneQuestCompletedConnections";
+import { ZoneQuestCreatedSchema } from "./types/zone-quest-created";
+import handleZoneQuestCreated from "./handlers/notifications/zoneQuestCreated";
 
 dotenv.config();
 
@@ -75,6 +77,7 @@ async function start() {
   mediator.register('gspot:zone_quest_objective:rejected', withSchema(ZoneQuestObjectiveRejectedSchema, handleZoneQuestObjectiveRejected));
   mediator.register('gspot:zone_quest:completed', withSchema(ZoneQuestCompletedSchema, handleZoneQuestCompleted));
   mediator.register('gspot:zone_quest:completed', withSchema(ZoneQuestCompletedSchema, handleZoneQuestCompletedConnections));
+  mediator.register('gspot:zone_quest:created', withSchema(ZoneQuestCreatedSchema, handleZoneQuestCreated));
 
   //xp handlers
   mediator.register('gspot:post:guessed', withSchema(PostGuessedSchema, handleXpForPostGuessed));
