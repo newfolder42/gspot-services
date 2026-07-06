@@ -49,6 +49,9 @@ import handleXpForZoneQuestCompleted from "./handlers/xp/handleXpForZoneQuestCom
 import handleZoneQuestCompletedConnections from "./handlers/notifications/zoneQuestCompletedConnections";
 import { ZoneQuestCreatedSchema } from "./types/zone-quest-created";
 import handleZoneQuestCreated from "./handlers/notifications/zoneQuestCreated";
+import handleQuestCompletedFeedEvent from "./handlers/feed/questCompletedFeedEvent";
+import handleAchievementUnlockedFeedEvent from "./handlers/feed/achievementUnlockedFeedEvent";
+import { deleteOldFeedEvents } from "./jobs/deleteOldFeedEvents";
 
 dotenv.config();
 
@@ -78,6 +81,10 @@ async function start() {
   mediator.register('gspot:zone_quest:completed', withSchema(ZoneQuestCompletedSchema, handleZoneQuestCompleted));
   mediator.register('gspot:zone_quest:completed', withSchema(ZoneQuestCompletedSchema, handleZoneQuestCompletedConnections));
   mediator.register('gspot:zone_quest:created', withSchema(ZoneQuestCreatedSchema, handleZoneQuestCreated));
+
+  // feed events ("ამბები") — one row per happening, no destination user
+  mediator.register('gspot:zone_quest:completed', withSchema(ZoneQuestCompletedSchema, handleQuestCompletedFeedEvent));
+  mediator.register('gspot:user_achievement:achieved', withSchema(UserAchievementAchievedSchema, handleAchievementUnlockedFeedEvent));
 
   //xp handlers
   mediator.register('gspot:post:guessed', withSchema(PostGuessedSchema, handleXpForPostGuessed));
@@ -117,6 +124,9 @@ async function start() {
 
   // Schedule deletion of old notifications (daily at midnight)
   cron.schedule('0 0 * * *', deleteOldNotifications);
+
+  // Schedule deletion of expired feed events (daily at midnight)
+  cron.schedule('0 0 * * *', deleteOldFeedEvents);
 
   // Recalculate zone tag ordering by usage every 30 minutes during daytime
   cron.schedule('*/30 10-22 * * *', reorderZoneTagsByUsage);
