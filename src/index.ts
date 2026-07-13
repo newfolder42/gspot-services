@@ -35,6 +35,10 @@ import { UserAchievementAchievedSchema } from "./types/user-achievement-achieved
 import handleUserAchievementAchieved from "./handlers/notifications/userAchievementAchieved";
 import { PostCommentCreatedSchema } from './types/post-comment-created';
 import handlePostCommentCreated from './handlers/notifications/postCommentCreated';
+import { PostVoteCreatedSchema } from './types/post-vote-created';
+import handlePostVoteCreated from './handlers/notifications/postVoteCreated';
+import { PostRewardCreatedSchema } from './types/post-reward-created';
+import handlePostRewardCreated from './handlers/notifications/postRewardCreated';
 import { ZoneMemberAddedSchema } from "./types/zonemember-added";
 import handlezoneMemberCreated from "./handlers/notifications/zoneMemberCreated";
 import { ZoneQuestObjectiveSubmittedSchema } from "./types/zone-quest-objective-submitted";
@@ -74,6 +78,8 @@ async function start() {
   mediator.register('gspot:user_connection:created', withSchema(UserConnectionCreatedSchema, handleNewConnection));
   mediator.register('gspot:user_achievement:achieved', withSchema(UserAchievementAchievedSchema, handleUserAchievementAchieved));
   mediator.register('gspot:post:comment-created', withSchema(PostCommentCreatedSchema, handlePostCommentCreated));
+  mediator.register('gspot:post:vote-created', withSchema(PostVoteCreatedSchema, handlePostVoteCreated));
+  mediator.register('gspot:post:reward-created', withSchema(PostRewardCreatedSchema, handlePostRewardCreated));
   mediator.register('gspot:zone_member:added', withSchema(ZoneMemberAddedSchema, handlezoneMemberCreated));
   mediator.register('gspot:zone_quest_objective:submitted', withSchema(ZoneQuestObjectiveSubmittedSchema, handleZoneQuestObjectiveSubmitted));
   mediator.register('gspot:zone_quest_objective:accepted', withSchema(ZoneQuestObjectiveAcceptedSchema, handleZoneQuestObjectiveAccepted));
