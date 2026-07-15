@@ -26,7 +26,6 @@ export const xpActionDictionary: Record<string, number> = {
   'post-being-guessed': 10,
   'post-published': 100,
   'post-deleted': -100,
-  'zone_quest_completed': 200,
 };
 
 export type XPInfo = {
@@ -78,6 +77,7 @@ export async function getLevelFromXp(totalXP: number): Promise<XPInfo> {
 export type IncreaseUserXpInput = {
   userId: number;
   action: string;
+  xp?: number;
   details?: Record<string, any>;
 };
 
@@ -86,7 +86,7 @@ export async function increaseUserXp(
 ): Promise<XPInfo> {
   const { userId, action, details } = input;
 
-  const xp = xpActionDictionary[action];
+  const xp = input.xp ?? xpActionDictionary[action];
   if (xp === undefined) {
     throw new Error(`Unknown XP action: ${action}`);
   }
