@@ -1,6 +1,5 @@
 import {
   getGuessesTotalCount,
-  getLongestActivityStreakDays,
   getPerfectGuessesTotalCount,
   updateProgressiveAchievement,
 } from '../../lib/achievements';
@@ -25,13 +24,6 @@ export default async function handlePostGuessedAchievements(event: PostGuessed) 
         currentValue: perfectGuessesTotal,
       });
     }
-
-    const longestStreak = await getLongestActivityStreakDays(userId);
-    await updateProgressiveAchievement({
-      userId,
-      achievementKey: 'streak_days',
-      currentValue: longestStreak,
-    });
   } catch (err) {
     console.error('Failed to process post-guessed achievements', err, event);
   }

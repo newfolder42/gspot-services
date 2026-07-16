@@ -379,36 +379,3 @@ export async function getPerfectGuessesTotalCount(userId: number): Promise<numbe
 
   return Number(res.rows[0]?.total || 0);
 }
-
-export async function getLongestActivityStreakDays(userId: number): Promise<number> {
-  const res = await query(
-    `WITH activity_days AS (
-  SELECT p.created_at::date AS day
-  FROM posts p
-  WHERE p.user_id = $1
-    AND p.status = 'published'
-
-  UNION
-
-  SELECT pg.created_at::date AS day
-  FROM post_guesses pg
-  WHERE pg.user_id = $1
-),
-grouped AS (
-  SELECT
-    day,
-    day - (ROW_NUMBER() OVER (ORDER BY day))::int AS grp
-  FROM activity_days
-),
-streaks AS (
-  SELECT COUNT(*)::int AS streak_length
-  FROM grouped
-  GROUP BY grp
-)
-SELECT COALESCE(MAX(streak_length), 0)::int AS longest_streak
-FROM streaks`,
-    [userId]
-  );
-
-  return Number(res.rows[0]?.longest_streak || 0);
-}

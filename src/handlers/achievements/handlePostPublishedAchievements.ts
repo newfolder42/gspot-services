@@ -1,5 +1,4 @@
 import {
-  getLongestActivityStreakDays,
   getPublishedPostsCount,
   updateProgressiveAchievement,
 } from '../../lib/achievements';
@@ -14,13 +13,6 @@ export default async function handlePostPublishedAchievements(event: PostPublish
       userId,
       achievementKey: 'posts_total',
       currentValue: postsTotal,
-    });
-
-    const longestStreak = await getLongestActivityStreakDays(userId);
-    await updateProgressiveAchievement({
-      userId,
-      achievementKey: 'streak_days',
-      currentValue: longestStreak,
     });
   } catch (err) {
     console.error('Failed to process post-published achievements', err, event);

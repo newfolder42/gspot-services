@@ -37,7 +37,7 @@ import { PostCommentCreatedSchema } from './types/post-comment-created';
 import handlePostCommentCreated from './handlers/notifications/postCommentCreated';
 import { PostVoteCreatedSchema } from './types/post-vote-created';
 import handlePostVoteCreated from './handlers/notifications/postVoteCreated';
-import { PostRewardCreatedSchema } from './types/post-reward-created';
+import { PostRewardCreatedSchema, PostRewardCreatedEvent } from './types/post-reward-created';
 import handlePostRewardCreated from './handlers/notifications/postRewardCreated';
 import { ZoneMemberAddedSchema } from "./types/zonemember-added";
 import handlezoneMemberCreated from "./handlers/notifications/zoneMemberCreated";
@@ -57,6 +57,11 @@ import handleZoneQuestCreated from "./handlers/notifications/zoneQuestCreated";
 import handleQuestCompletedFeedEvent from "./handlers/feed/questCompletedFeedEvent";
 import handleAchievementUnlockedFeedEvent from "./handlers/feed/achievementUnlockedFeedEvent";
 import { deleteOldFeedEvents } from "./jobs/deleteOldFeedEvents";
+import handleUserActivityStreak from "./handlers/streaks/handleUserActivityStreak";
+import { PostPublished } from "./types/post-published";
+import { PostGuessed } from "./types/post-guesed";
+import { PostVoteCreatedEvent } from "./types/post-vote-created";
+import { PostCommentCreatedEvent } from "./types/post-comment-created";
 
 dotenv.config();
 
@@ -89,7 +94,7 @@ async function start() {
   mediator.register('gspot:zone_quest:completed', withSchema(ZoneQuestCompletedSchema, handleZoneQuestCompletedConnections));
   mediator.register('gspot:zone_quest:created', withSchema(ZoneQuestCreatedSchema, handleZoneQuestCreated));
 
-  // feed events ("ამბები") — one row per happening, no destination user
+  // feed events
   mediator.register('gspot:zone_quest:completed', withSchema(ZoneQuestCompletedSchema, handleQuestCompletedFeedEvent));
   mediator.register('gspot:user_achievement:achieved', withSchema(UserAchievementAchievedSchema, handleAchievementUnlockedFeedEvent));
 
@@ -101,6 +106,13 @@ async function start() {
   // reward handlers
   mediator.register('gspot:zone_quest:completed', withSchema(ZoneQuestCompletedSchema, handleRewardsForZoneQuestCompleted));
   mediator.register('gspot:user_achievement:achieved', withSchema(UserAchievementAchievedSchema, handleRewardsForUserAchievementAchieved));
+
+  // streak handlers
+  mediator.register('gspot:post:published', withSchema(PostPublishedSchema, handleUserActivityStreak<PostPublished>((e) => e.payload.authorId)));
+  mediator.register('gspot:post:guessed', withSchema(PostGuessedSchema, handleUserActivityStreak<PostGuessed>((e) => e.payload.userId)));
+  mediator.register('gspot:post:vote-created', withSchema(PostVoteCreatedSchema, handleUserActivityStreak<PostVoteCreatedEvent>((e) => (e.payload.value === 1 ? e.payload.voterId : null))));
+  mediator.register('gspot:post:comment-created', withSchema(PostCommentCreatedSchema, handleUserActivityStreak<PostCommentCreatedEvent>((e) => e.payload.commenterId)));
+  mediator.register('gspot:post:reward-created', withSchema(PostRewardCreatedSchema, handleUserActivityStreak<PostRewardCreatedEvent>((e) => e.payload.giverId)));
 
   // achievement handlers
   mediator.register('gspot:user_connection:created', withSchema(UserConnectionCreatedSchema, handleUserConnectionAchievements));
