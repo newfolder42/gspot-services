@@ -6,7 +6,7 @@ import { query } from './db';
  * without extra joins.
  */
 
-type FeedEventType = 'quest_completed' | 'achievement_unlocked';
+type FeedEventType = 'quest_completed' | 'achievement_unlocked' | 'quest_created';
 
 type QuestPhoto = {
   url: string;
@@ -104,6 +104,42 @@ export async function createQuestCompletedEvent(payload: {
       characterAvatar,
       postId,
       photos,
+    }
+  );
+}
+
+async function getZoneName(zoneId: number): Promise<string> {
+  const res = await query(`SELECT name FROM zones WHERE id = $1 LIMIT 1`, [zoneId]);
+  return res.rows[0]?.name ?? '';
+}
+
+/** Zone published a new quest — visible to that zone's active members only. */
+export async function createQuestCreatedEvent(payload: {
+  questId: number;
+  questTitle: string;
+  zoneId: number;
+  zoneSlug: string;
+  characterName: string | null;
+  characterAvatar: string | null;
+  createdBy: number;
+  createdByAlias: string;
+}): Promise<void> {
+  const zoneName = await getZoneName(payload.zoneId);
+
+  await insertFeedEvent(
+    payload.createdBy,
+    'quest_created',
+    `quest_created:${payload.questId}`,
+    payload.questId,
+    {
+      questId: payload.questId,
+      questTitle: payload.questTitle,
+      zoneId: payload.zoneId,
+      zoneSlug: payload.zoneSlug,
+      zoneName,
+      characterName: payload.characterName,
+      characterAvatar: payload.characterAvatar,
+      createdByAlias: payload.createdByAlias,
     }
   );
 }

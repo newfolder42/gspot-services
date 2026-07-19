@@ -57,6 +57,7 @@ import { ZoneQuestCreatedSchema } from "./types/zone-quest-created";
 import handleZoneQuestCreated from "./handlers/notifications/zoneQuestCreated";
 import handleQuestCompletedFeedEvent from "./handlers/feed/questCompletedFeedEvent";
 import handleAchievementUnlockedFeedEvent from "./handlers/feed/achievementUnlockedFeedEvent";
+import handleQuestCreatedFeedEvent from "./handlers/feed/questCreatedFeedEvent";
 import { deleteOldFeedEvents } from "./jobs/deleteOldFeedEvents";
 import handleUserActivityStreak from "./handlers/streaks/handleUserActivityStreak";
 import { PostPublished } from "./types/post-published";
@@ -98,6 +99,7 @@ async function start() {
   // feed events
   mediator.register('gspot:zone_quest:completed', withSchema(ZoneQuestCompletedSchema, handleQuestCompletedFeedEvent));
   mediator.register('gspot:user_achievement:achieved', withSchema(UserAchievementAchievedSchema, handleAchievementUnlockedFeedEvent));
+  mediator.register('gspot:zone_quest:created', withSchema(ZoneQuestCreatedSchema, handleQuestCreatedFeedEvent));
 
   //xp handlers
   mediator.register('gspot:post:guessed', withSchema(PostGuessedSchema, handleXpForPostGuessed));
