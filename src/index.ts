@@ -31,6 +31,7 @@ import handlePostGuessedAchievements from "./handlers/achievements/handlePostGue
 import { UserProfilePhotoChangedSchema } from "./types/user-profile-photo-changed";
 import { UserLevelChangedSchema } from "./types/user-level-changed";
 import handleUserLevelChangedAchievements from "./handlers/achievements/handleUserLevelChangedAchievements";
+import handleZoneQuestCompletedAchievements from "./handlers/achievements/handleZoneQuestCompletedAchievements";
 import { UserAchievementAchievedSchema } from "./types/user-achievement-achieved";
 import handleUserAchievementAchieved from "./handlers/notifications/userAchievementAchieved";
 import { PostCommentCreatedSchema } from './types/post-comment-created';
@@ -121,6 +122,7 @@ async function start() {
   mediator.register('gspot:post:guessed', withSchema(PostGuessedSchema, handlePostGuessedAchievements));
   mediator.register('gspot:user:level-up', withSchema(UserLevelChangedSchema, handleUserLevelChangedAchievements));
   mediator.register('gspot:user:level-down', withSchema(UserLevelChangedSchema, handleUserLevelChangedAchievements));
+  mediator.register('gspot:zone_quest:completed', withSchema(ZoneQuestCompletedSchema, handleZoneQuestCompletedAchievements));
 
   // Subscribe to Redis events
   await redis.pSubscribe('gspot:*', async (message, channel) => {

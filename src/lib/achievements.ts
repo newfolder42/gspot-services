@@ -368,6 +368,17 @@ export async function getGuessesTotalCount(userId: number): Promise<number> {
   return Number(res.rows[0]?.total || 0);
 }
 
+export async function getCompletedQuestsCount(userId: number): Promise<number> {
+  const res = await query(
+    `SELECT COUNT(*)::int AS total
+     FROM user_quests
+     WHERE user_id = $1 AND status = 'completed'`,
+    [userId]
+  );
+
+  return Number(res.rows[0]?.total || 0);
+}
+
 export async function getPerfectGuessesTotalCount(userId: number): Promise<number> {
   const res = await query(
     `SELECT COUNT(*)::int AS total
