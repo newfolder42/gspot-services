@@ -12,6 +12,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "@aws-sdk/client-sesv2": "^3.1090.0",
     "dotenv": "^16.0.0",
     "exifreader": "^4.36.0",
     "node-cron": "^4.2.1",

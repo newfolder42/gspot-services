@@ -1,6 +1,8 @@
 "use server";
 
-type EmailProvider = 'resend' | 'console';
+import { SESv2Client, SendEmailCommand } from "@aws-sdk/client-sesv2";
+
+type EmailProvider = 'ses' | 'resend' | 'console';
 
 interface EmailOptions {
     to: string;
@@ -9,9 +11,19 @@ interface EmailOptions {
     text: string | null;
 }
 
-const EMAIL_PROVIDER = (process.env.EMAIL_PROVIDER || 'console') as EmailProvider;
+const SELECTED_PROVIDER: EmailProvider = (process.env.EMAIL_PROVIDER || 'console') as EmailProvider;
 const FROM_EMAIL = 'auth@gspot.ge';
 const FROM_NAME = "G'Spot";
+
+function resolveProvider(): EmailProvider {
+    if (SELECTED_PROVIDER === 'ses' && !(process.env.AWSSES_ACCESS_KEY_ID && process.env.AWSSES_SECRET_ACCESS_KEY)) {
+        return 'console';
+    }
+    if (SELECTED_PROVIDER === 'resend' && !process.env.EMAIL_PROVIDER_KEY) {
+        return 'console';
+    }
+    return SELECTED_PROVIDER;
+}
 
 async function sendViaConsole(options: EmailOptions): Promise<void> {
     console.log('📧 [EMAIL - Console Mode]');
@@ -20,6 +32,41 @@ async function sendViaConsole(options: EmailOptions): Promise<void> {
     console.log('HTML:', options.html);
     console.log('Text:', options.text || '');
     console.log('---');
+}
+
+let sesClient: SESv2Client | null = null;
+
+function getSESClient(): SESv2Client {
+    if (!sesClient) {
+        sesClient = new SESv2Client({
+            region: process.env.AWS_REGION,
+            credentials: {
+                accessKeyId: process.env.AWSSES_ACCESS_KEY_ID!,
+                secretAccessKey: process.env.AWSSES_SECRET_ACCESS_KEY!,
+            },
+        });
+    }
+    return sesClient;
+}
+
+async function sendViaSES(options: EmailOptions): Promise<void> {
+    const command = new SendEmailCommand({
+        FromEmailAddress: `${FROM_NAME} <${FROM_EMAIL}>`,
+        Destination: {
+            ToAddresses: [options.to],
+        },
+        Content: {
+            Simple: {
+                Subject: { Data: options.subject, Charset: 'UTF-8' },
+                Body: {
+                    Html: { Data: options.html, Charset: 'UTF-8' },
+                    ...(options.text ? { Text: { Data: options.text, Charset: 'UTF-8' } } : {}),
+                },
+            },
+        },
+    });
+
+    await getSESClient().send(command);
 }
 
 async function sendViaResend(options: EmailOptions): Promise<void> {
@@ -48,7 +95,10 @@ async function sendViaResend(options: EmailOptions): Promise<void> {
 
 async function sendEmail(options: EmailOptions): Promise<boolean> {
     try {
-        switch (EMAIL_PROVIDER) {
+        switch (resolveProvider()) {
+            case 'ses':
+                await sendViaSES(options);
+                break;
             case 'resend':
                 await sendViaResend(options);
                 break;
@@ -105,10 +155,20 @@ export async function sendUnseenNotification(email: string, notificationText: st
     </html>
   `;
 
+    const text = `
+${FROM_NAME} - წაუკითხავი ნოთიფიკაცია
+
+შენ გაქვს წაუკითხავი ნოთიფიკაცია!
+
+${notificationText}
+
+გახსენი G'Spot: https://gspot.ge
+  `;
+
     return sendEmail({
         to: email,
-        subject: `${FROM_NAME} 🔔 წაუკითხავი ნოთიფიკაცია`,
+        subject: `${FROM_NAME} წაუკითხავი ნოთიფიკაცია`,
         html,
-        text: null,
+        text,
     });
 }

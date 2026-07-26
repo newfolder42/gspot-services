@@ -119,6 +119,9 @@ jobs:
             echo "PORT=${{ env.PORT }}" >> $ENV_FILE
             echo "EMAIL_PROVIDER=${{ env.EMAIL_PROVIDER }}" >> $ENV_FILE
             echo "EMAIL_PROVIDER_KEY=${{ secrets.EMAIL_PROVIDER_KEY }}" >> $ENV_FILE
+            echo "AWS_REGION=${{ env.AWS_REGION }}" >> $ENV_FILE
+            echo "AWSSES_ACCESS_KEY_ID=${{ secrets.AWSSES_ACCESS_KEY_ID }}" >> $ENV_FILE
+            echo "AWSSES_SECRET_ACCESS_KEY=${{ secrets.AWSSES_SECRET_ACCESS_KEY }}" >> $ENV_FILE
             echo "NODE_ENV=production" >> $ENV_FILE
             node -v || (echo "Node missing" && exit 1)
             npm ci --production
