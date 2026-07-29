@@ -22,12 +22,12 @@ function buildNotificationText(type: string, details: Record<string, any>): stri
   switch (type) {
     case 'gps-guess':
       return `${details.userAlias}-მა შენს პოსტზე სცადა გამოცნობა (${details.score} ქულა)`;
-    
+
     case 'connection-created-gps-post':
       return details.title?.trim()
         ? `${details.authorAlias}-მა გამოაქვეყნა: ${details.title}`
         : `${details.authorAlias}-მა გამოაქვეყნა ახალი პოსტი`;
-    
+
     case 'user-started-following':
       return `ახალი ფოლოვერი ${details.followerAlias}`;
 
@@ -61,7 +61,45 @@ function buildNotificationText(type: string, details: Record<string, any>): stri
       return `${details.character.name}ს შენთვის ახალი მისია აქვს: ${details.questTitle}`;
 
     default:
-      return `წაუკითხავი ნოტიფიკაცია`;
+      return `ახალი შეტყობინება`;
+  }
+}
+
+function buildNotificationRoute(type: string, details: Record<string, any>, recipientAlias: string): string | null {
+  const seg = (value: unknown): string => encodeURIComponent(String(value));
+
+  switch (type) {
+    case 'gps-guess':
+    case 'connection-created-gps-post':
+      return details.postId ? `/post/${seg(details.postId)}` : null;
+
+    case 'user-started-following':
+      return details.followerAlias ? `/account/${seg(details.followerAlias)}` : null;
+
+    case 'user-achievement-achieved':
+      return `/account/${seg(recipientAlias)}/achievements`;
+
+    case 'post-comment-created':
+      if (!details.postId) return null;
+      return details.commentId
+        ? `/post/${seg(details.postId)}?commentId=${seg(details.commentId)}`
+        : `/post/${seg(details.postId)}`;
+
+    case 'zone-quest-objective-submitted':
+      return details.zoneSlug && details.questId
+        ? `/zone/${seg(details.zoneSlug)}/quests/${seg(details.questId)}/moderation`
+        : null;
+
+    case 'zone-quest-objective-accepted':
+    case 'zone-quest-objective-rejected':
+    case 'zone-quest-completed':
+    case 'zone-quest-created':
+      return details.zoneSlug && details.questId
+        ? `/zone/${seg(details.zoneSlug)}/quests/${seg(details.questId)}`
+        : null;
+
+    default:
+      return null;
   }
 }
 
@@ -77,7 +115,8 @@ export async function runEmailSenderForUnseenNotifications() {
         un.details,
         un.created_at,
         u.email,
-        u.name
+        u.name,
+        u.alias
       FROM user_notifications un
       JOIN users u ON un.user_id = u.id
       JOIN user_options uo ON u.id = uo.user_id
@@ -109,8 +148,9 @@ export async function runEmailSenderForUnseenNotifications() {
 
         const details = normalizeDetails(row.details);
         const notificationText = buildNotificationText(row.type, details);
+        const route = buildNotificationRoute(row.type, details, row.alias);
 
-        const emailSent = await sendUnseenNotification(row.email, notificationText);
+        const emailSent = await sendUnseenNotification(row.email, notificationText, route);
 
         if (emailSent) {
           await query(

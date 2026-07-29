@@ -17,7 +17,7 @@ jobs:
       POSTGRES_SSL: true
       SSH_USER: bitnami
       DEPLOYMENT_DIR: /home/bitnami/gspot
-      EMAIL_PROVIDER: resend
+      EMAIL_PROVIDER: ses
 
     steps:
       - name: Checkout
