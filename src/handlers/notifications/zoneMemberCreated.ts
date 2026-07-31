@@ -1,7 +1,7 @@
 import { createNotification } from '../../lib/notifications';
-import { ZoneMemberAdded } from '../../types/zonemember-added';
+import { ZoneMemberAddedEvent } from '../../types/zone-member-added';
 
-export default async function handlezoneMemberCreated(event: ZoneMemberAdded) {
+export default async function handlezoneMemberCreated(event: ZoneMemberAddedEvent) {
   const payload = event.payload;
   const status = payload.status;
 

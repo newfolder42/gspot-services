@@ -8,7 +8,7 @@ import { runEmailSenderForUnseenNotifications } from './jobs/emailSenderForUnsee
 import { runDeletePendingRegistrations } from './jobs/deletePendingRegistrations';
 import { deleteOldNotifications } from './jobs/deleteOldNotifications';
 import { reorderZoneTagsByUsage } from './jobs/reorderZoneTagsByUsage';
-import { PostGuessedSchema } from './types/post-guesed';
+import { PostGuessedSchema } from './types/post-guessed';
 import { PostPublishedSchema } from './types/post-published';
 import { Mediator } from './mediator';
 import handlePostGuessedLeaderboard from './handlers/handlePostGuessedLeaderboard';
@@ -40,7 +40,7 @@ import { PostVoteCreatedSchema } from './types/post-vote-created';
 import handlePostVoteCreated from './handlers/notifications/postVoteCreated';
 import { PostRewardCreatedSchema, PostRewardCreatedEvent } from './types/post-reward-created';
 import handlePostRewardCreated from './handlers/notifications/postRewardCreated';
-import { ZoneMemberAddedSchema } from "./types/zonemember-added";
+import { ZoneMemberAddedSchema } from "./types/zone-member-added";
 import handlezoneMemberCreated from "./handlers/notifications/zoneMemberCreated";
 import { ZoneQuestObjectiveSubmittedSchema } from "./types/zone-quest-objective-submitted";
 import handleZoneQuestObjectiveSubmitted from "./handlers/notifications/zoneQuestObjectiveSubmitted";
@@ -60,8 +60,8 @@ import handleAchievementUnlockedFeedEvent from "./handlers/feed/achievementUnloc
 import handleQuestCreatedFeedEvent from "./handlers/feed/questCreatedFeedEvent";
 import { deleteOldFeedEvents } from "./jobs/deleteOldFeedEvents";
 import handleUserActivityStreak from "./handlers/streaks/handleUserActivityStreak";
-import { PostPublished } from "./types/post-published";
-import { PostGuessed } from "./types/post-guesed";
+import { PostPublishedEvent } from "./types/post-published";
+import { PostGuessedEvent } from "./types/post-guessed";
 import { PostVoteCreatedEvent } from "./types/post-vote-created";
 import { PostCommentCreatedEvent } from "./types/post-comment-created";
 
@@ -111,8 +111,8 @@ async function start() {
   mediator.register('gspot:user_achievement:achieved', withSchema(UserAchievementAchievedSchema, handleRewardsForUserAchievementAchieved));
 
   // streak handlers
-  mediator.register('gspot:post:published', withSchema(PostPublishedSchema, handleUserActivityStreak<PostPublished>((e) => e.payload.authorId)));
-  mediator.register('gspot:post:guessed', withSchema(PostGuessedSchema, handleUserActivityStreak<PostGuessed>((e) => e.payload.userId)));
+  mediator.register('gspot:post:published', withSchema(PostPublishedSchema, handleUserActivityStreak<PostPublishedEvent>((e) => e.payload.authorId)));
+  mediator.register('gspot:post:guessed', withSchema(PostGuessedSchema, handleUserActivityStreak<PostGuessedEvent>((e) => e.payload.userId)));
   mediator.register('gspot:post:vote-created', withSchema(PostVoteCreatedSchema, handleUserActivityStreak<PostVoteCreatedEvent>((e) => (e.payload.value === 1 ? e.payload.voterId : null))));
   mediator.register('gspot:post:comment-created', withSchema(PostCommentCreatedSchema, handleUserActivityStreak<PostCommentCreatedEvent>((e) => e.payload.commenterId)));
   mediator.register('gspot:post:reward-created', withSchema(PostRewardCreatedSchema, handleUserActivityStreak<PostRewardCreatedEvent>((e) => e.payload.giverId)));

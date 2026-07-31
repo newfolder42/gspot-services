@@ -3,9 +3,9 @@ import {
   getPerfectGuessesTotalCount,
   updateProgressiveAchievement,
 } from '../../lib/achievements';
-import { PostGuessed } from '../../types/post-guesed';
+import { PostGuessedEvent } from '../../types/post-guessed';
 
-export default async function handlePostGuessedAchievements(event: PostGuessed) {
+export default async function handlePostGuessedAchievements(event: PostGuessedEvent) {
   const userId = event.payload.userId;
 
   try {

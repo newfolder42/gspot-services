@@ -1,7 +1,7 @@
-import { PostFailed } from '../../types/post-failed';
+import { PostFailedEvent } from '../../types/post-failed';
 import { createNotification } from '../../lib/notifications';
 
-export default async function handlePostFailed(event: PostFailed) {
+export default async function handlePostFailed(event: PostFailedEvent) {
   const payload = event.payload;
 
   await createNotification(payload.authorId, 'gps-post-failed', {
@@ -10,6 +10,6 @@ export default async function handlePostFailed(event: PostFailed) {
     authorAlias: payload.authorAlias,
     postType: payload.postType || null,
     title: payload.postTitle || null,
-    reason: payload.reason,
+    reason: payload.reason ?? null,
   });
 }

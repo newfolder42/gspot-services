@@ -1,7 +1,7 @@
 import { increaseUserXp } from "../../lib/xp";
-import { PostDeleted } from "../../types/post-deleted";
+import { PostDeletedEvent } from "../../types/post-deleted";
 
-export default async function handleXpForPostDeleted(event: PostDeleted) {
+export default async function handleXpForPostDeleted(event: PostDeletedEvent) {
   const payload = event.payload;
 
   try {

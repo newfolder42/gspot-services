@@ -1,10 +1,10 @@
-import { PostProcessing } from '../types/post-processing';
+import { PostProcessingEvent } from '../types/post-processing';
 import ExifReader from 'exifreader';
 import { query } from '../lib/db';
 import { PostType } from '../types/post';
 import { publish } from '../lib/redis';
 
-export default async function handlePostProcessing(event: PostProcessing) {
+export default async function handlePostProcessing(event: PostProcessingEvent) {
   if (event.payload.postType !== 'gps-photo') return;
 
   const payload = event.payload;

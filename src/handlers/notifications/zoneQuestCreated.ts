@@ -1,8 +1,8 @@
 import { createNotification } from '../../lib/notifications';
 import { getZoneActiveUserIds } from '../../lib/zoneMembers';
-import { ZoneQuestCreated } from '../../types/zone-quest-created';
+import { ZoneQuestCreatedEvent } from '../../types/zone-quest-created';
 
-export default async function handleZoneQuestCreated(event: ZoneQuestCreated) {
+export default async function handleZoneQuestCreated(event: ZoneQuestCreatedEvent) {
   const payload = event.payload;
 
   const activeUserIds = (await getZoneActiveUserIds(payload.zoneId));

@@ -1,7 +1,7 @@
-import { PostGuessed } from '../../types/post-guesed';
+import { PostGuessedEvent } from '../../types/post-guessed';
 import { createNotification } from '../../lib/notifications';
 
-export default async function handlePostGuessed(event: PostGuessed) {
+export default async function handlePostGuessed(event: PostGuessedEvent) {
   const payload = event.payload;
   const guessType = payload.guessType;
 

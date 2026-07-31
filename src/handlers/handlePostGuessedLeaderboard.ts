@@ -1,5 +1,5 @@
 import { query } from '../lib/db';
-import { PostGuessed } from '../types/post-guesed';
+import { PostGuessedEvent } from '../types/post-guessed';
 
 function weekKey(timestamp: Date): string {
   const date = new Date(Date.UTC(timestamp.getUTCFullYear(), timestamp.getUTCMonth(), timestamp.getUTCDate()));
@@ -17,7 +17,7 @@ function monthKey(timestamp: Date): string {
   return `${year}-M${month}`;
 }
 
-export default async function handlePostGuessedLeaderboard(event: PostGuessed) {
+export default async function handlePostGuessedLeaderboard(event: PostGuessedEvent) {
   const payload = event.payload;
 
   const leaderboardType = 'gps-guessers';

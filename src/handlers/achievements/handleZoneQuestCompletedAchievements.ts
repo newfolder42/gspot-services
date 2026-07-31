@@ -1,7 +1,7 @@
 import { getCompletedQuestsCount, updateProgressiveAchievement } from '../../lib/achievements';
-import { ZoneQuestCompleted } from '../../types/zone-quest-completed';
+import { ZoneQuestCompletedEvent } from '../../types/zone-quest-completed';
 
-export default async function handleZoneQuestCompletedAchievements(event: ZoneQuestCompleted) {
+export default async function handleZoneQuestCompletedAchievements(event: ZoneQuestCompletedEvent) {
   const userId = event.payload.userId;
 
   try {

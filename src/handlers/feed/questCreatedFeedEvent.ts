@@ -1,7 +1,7 @@
 import { createQuestCreatedEvent } from '../../lib/feedEvents';
-import { ZoneQuestCreated } from '../../types/zone-quest-created';
+import { ZoneQuestCreatedEvent } from '../../types/zone-quest-created';
 
-export default async function handleQuestCreatedFeedEvent(event: ZoneQuestCreated) {
+export default async function handleQuestCreatedFeedEvent(event: ZoneQuestCreatedEvent) {
   const payload = event.payload;
 
   await createQuestCreatedEvent({

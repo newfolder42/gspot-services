@@ -1,8 +1,8 @@
 import { query } from '../../lib/db';
 import { applyRewardSpecs, parseRewardSpecs } from '../../lib/rewards';
-import { ZoneQuestCompleted } from '../../types/zone-quest-completed';
+import { ZoneQuestCompletedEvent } from '../../types/zone-quest-completed';
 
-export default async function handleRewardsForZoneQuestCompleted(event: ZoneQuestCompleted) {
+export default async function handleRewardsForZoneQuestCompleted(event: ZoneQuestCompletedEvent) {
   const payload = event.payload;
 
   try {

@@ -2,9 +2,9 @@ import {
   getPublishedPostsCount,
   updateProgressiveAchievement,
 } from '../../lib/achievements';
-import { PostPublished } from '../../types/post-published';
+import { PostPublishedEvent } from '../../types/post-published';
 
-export default async function handlePostPublishedAchievements(event: PostPublished) {
+export default async function handlePostPublishedAchievements(event: PostPublishedEvent) {
   const userId = event.payload.authorId;
 
   try {

@@ -1,8 +1,8 @@
-import { PostPublished } from '../../types/post-published';
+import { PostPublishedEvent } from '../../types/post-published';
 import { getConnecters } from '../../lib/connectiosn';
 import { createNotification } from '../../lib/notifications';
 
-export default async function handlePostPublished(event: PostPublished) {
+export default async function handlePostPublished(event: PostPublishedEvent) {
   const payload = event.payload;
 
   const notificationType = payload.postType === 'quest-completion'

@@ -1,7 +1,7 @@
 import { increaseUserXp } from "../../lib/xp";
-import { PostGuessed } from "../../types/post-guesed";
+import { PostGuessedEvent } from "../../types/post-guessed";
 
-export default async function handleXpForPostGuessed(event: PostGuessed) {
+export default async function handleXpForPostGuessed(event: PostGuessedEvent) {
   const payload = event.payload;
 
   try {

@@ -1,8 +1,8 @@
 import { getConnecters } from '../../lib/connectiosn';
 import { createNotification } from '../../lib/notifications';
-import { ZoneQuestCompleted } from '../../types/zone-quest-completed';
+import { ZoneQuestCompletedEvent } from '../../types/zone-quest-completed';
 
-export default async function handleZoneQuestCompletedConnections(event: ZoneQuestCompleted) {
+export default async function handleZoneQuestCompletedConnections(event: ZoneQuestCompletedEvent) {
   const payload = event.payload;
 
   const connections = await getConnecters(payload.userId);

@@ -1,8 +1,8 @@
 import { createNotification } from '../../lib/notifications';
 import { getZoneStaffUserIds } from '../../lib/zoneMembers';
-import { ZoneQuestObjectiveSubmitted } from '../../types/zone-quest-objective-submitted';
+import { ZoneQuestObjectiveSubmittedEvent } from '../../types/zone-quest-objective-submitted';
 
-export default async function handleZoneQuestObjectiveSubmitted(event: ZoneQuestObjectiveSubmitted) {
+export default async function handleZoneQuestObjectiveSubmitted(event: ZoneQuestObjectiveSubmittedEvent) {
   const payload = event.payload;
 
   const staffUserIds = await getZoneStaffUserIds(payload.zoneId, payload.userId);
