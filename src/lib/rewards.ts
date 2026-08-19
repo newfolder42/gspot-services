@@ -7,11 +7,23 @@ export type RewardContext = {
   details?: Record<string, any>;
 };
 
+const DEFAULT_DAILY_REWARD_LIMIT = 2;
+
 async function grantRewardUnlock(userId: number, rewardKey: string): Promise<void> {
   await query(
     `INSERT INTO user_unlocked_rewards (user_id, reward_key) VALUES ($1, $2)
      ON CONFLICT (user_id, reward_key) DO NOTHING`,
     [userId, rewardKey]
+  );
+}
+
+async function increaseDailyRewardLimit(userId: number, increase: number): Promise<void> {
+  await query(
+    `INSERT INTO user_reward_limits (user_id, daily_limit) VALUES ($1, $2)
+     ON CONFLICT (user_id) DO UPDATE
+       SET daily_limit = user_reward_limits.daily_limit + $3,
+           updated_at = now()`,
+    [userId, DEFAULT_DAILY_REWARD_LIMIT + increase, increase]
   );
 }
 
@@ -48,6 +60,9 @@ export async function applyRewardSpecs(
           break;
         case 'reward':
           await grantRewardUnlock(userId, spec.key);
+          break;
+        case 'reward-limit':
+          await increaseDailyRewardLimit(userId, spec.value);
           break;
       }
     } catch (err) {
