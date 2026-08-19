@@ -30,7 +30,7 @@ export async function createNotification(
     const notifId = res.rows.length > 0 ? res.rows[0].id : null;
 
     // Fire push notification (non-blocking, errors are logged internally)
-    sendPushForNotification(userId, type, details).catch(() => {});
+    sendPushForNotification(userId, type, details, notifId).catch(() => {});
 
     return notifId;
   } catch (err) {
@@ -39,90 +39,108 @@ export async function createNotification(
   }
 }
 
+type PushMessage = { title: string; body: string };
+
+const APP_NAME = "G'Spot";
+
 /**
- * Builds the tray text for a notification and pushes it to every device the
- * user has registered. Mirrors the same switch in gspot-web's lib/notifications.ts —
- * keep the two in sync when adding a notification type.
+ * Tray text for a notification. Anything caused by another person is titled with
+ * their alias and drops it from the body — Android groups the tray by title, so
+ * this gives one thread per person. Events with no human actor fall back to a
+ * short category title.
  */
-async function sendPushForNotification(userId: number, type: string, details: Record<string, any>) {
+export function buildPushMessage(type: string, details: Record<string, any>): PushMessage {
+  const by = (alias?: string | null): string => (alias ? `'${alias}` : APP_NAME);
+
+  switch (type) {
+    case 'gps-guess':
+      return { title: by(details.userAlias), body: `სცადა გამოცნობა (${details.score} ქულა)` };
+    case 'gps-photo-guess':
+      return { title: by(details.userAlias), body: `სცადა გამოცნობა ფოტოთი (${details.score} ქულა)` };
+    case 'connection-created-gps-post': {
+      const postTitle = details.title?.trim();
+      return {
+        title: by(details.authorAlias),
+        body: postTitle ? `გამოაქვეყნა: ${postTitle}` : 'გამოაქვეყნა ახალი პოსტი',
+      };
+    }
+    case 'connection-created-quest-post':
+      return { title: by(details.authorAlias), body: `შეასრულა მისია: ${details.title}` };
+    case 'gps-post-failed': {
+      const postTitle = details.title?.trim();
+      return {
+        title: 'პოსტი',
+        body: postTitle ? `პოსტი "${postTitle}" ვერ განთავსდა` : 'შენი პოსტი ვერ განთავსდა',
+      };
+    }
+    case 'user-started-following':
+      return { title: by(details.followerAlias), body: 'გახდა შენი ფოლოვერი' };
+    case 'user-achievement-achieved':
+      return {
+        title: 'მიღწევა',
+        body: `ახალი მიღწევა: ${details.milestoneName ?? details.achievementName}`,
+      };
+    case 'post-comment-created':
+      return {
+        title: by(details.commenterAlias),
+        body: details.parent ? 'დაგიტოვა კომენტარი' : 'დატოვა კომენტარი',
+      };
+    case 'post-vote-created':
+      return {
+        title: by(details.voterAlias),
+        body: details.value === 1 ? 'მოიწონა შენი პოსტი' : 'არ მოიწონა შენი პოსტი',
+      };
+    case 'comment-vote-created':
+      return {
+        title: by(details.voterAlias),
+        body: details.value === 1 ? 'მოიწონა შენი კომენტარი' : 'არ მოიწონა შენი კომენტარი',
+      };
+    case 'post-reward-created':
+      return { title: by(details.giverAlias), body: `დააჯილდოვა შენი პოსტი: ${details.rewardName}` };
+    case 'comment-reward-created':
+      return { title: by(details.giverAlias), body: `დააჯილდოვა შენი გამოცნობა: ${details.rewardName}` };
+    case 'feed-event-reaction':
+      return { title: by(details.reactorAlias), body: 'მოიწონა შენი ამბავი' };
+    case 'zone-member-invitation':
+      return { title: by(details.userAlias), body: `მოგიწვია საბზონაში: ${details.zoneSlug}` };
+    case 'zone-quest-created':
+      return details.character?.name
+        ? { title: details.character.name, body: `შენთვის ახალი მისია აქვს: ${details.questTitle}` }
+        : { title: 'მისია', body: `ახალი მისია: ${details.questTitle}` };
+    case 'zone-quest-completed':
+      return { title: 'მისია', body: `შესრულებულია: ${details.questTitle}` };
+    case 'zone-quest-objective-rejected':
+      return { title: 'მისია', body: `ამოცანა "${details.objectiveTitle ?? ''}" დაიწუნა, სცადე თავიდან` };
+    case 'zone-quest-objective-accepted':
+      return { title: 'მისია', body: `ამოცანა "${details.objectiveTitle ?? ''}" დადასტურდა` };
+    case 'zone-quest-objective-submitted':
+      return {
+        title: by(details.submitterAlias),
+        body: `გამოაგზავნა "${details.objectiveTitle ?? ''}" შესაფასებლად`,
+      };
+    case 'connection-completed-zone-quest':
+      return { title: by(details.userAlias), body: `შეასრულა მისია: ${details.questTitle}` };
+    default:
+      return { title: APP_NAME, body: 'ახალი შეტყობინება' };
+  }
+}
+
+/**
+ * Pushes a notification to every device the user has registered.
+ */
+async function sendPushForNotification(
+  userId: number,
+  type: string,
+  details: Record<string, any>,
+  notificationId: number | null
+) {
   const tokens = await getPushTokensForUser(userId);
   if (tokens.length === 0) return;
 
-  let body = 'ახალი შეტყობინება';
-  switch (type) {
-    case 'gps-guess':
-      body = `${details.userAlias}-მა სცადა გამოცნობა (${details.score} ქულა)`;
-      break;
-    case 'gps-photo-guess':
-      body = `${details.userAlias}-მა სცადა გამოცნობა ფოტოთი (${details.score} ქულა)`;
-      break;
-    case 'connection-created-gps-post': {
-      const title = details.title?.trim();
-      body = title ? `${details.authorAlias}-მა გამოაქვეყნა: ${title}` : `${details.authorAlias}-მა გამოაქვეყნა ახალი პოსტი`;
-      break;
-    }
-    case 'connection-created-quest-post':
-      body = `${details.authorAlias}-მა შეასრულა მისია: ${details.title}`;
-      break;
-    case 'gps-post-failed': {
-      const title = details.title?.trim();
-      body = title ? `პოსტი "${title}" ვერ განთავსდა` : 'შენი პოსტი ვერ განთავსდა';
-      break;
-    }
-    case 'user-started-following':
-      body = `ახალი ფოლოვერი: ${details.followerAlias}`;
-      break;
-    case 'user-achievement-achieved':
-      body = `ახალი მიღწევა: ${details.milestoneName ?? details.achievementName}`;
-      break;
-    case 'post-comment-created':
-      body = details.parent
-        ? `${details.commenterAlias}-მა დაგიტოვა კომენტარი`
-        : `${details.commenterAlias}-მა დატოვა კომენტარი`;
-      break;
-    case 'post-vote-created':
-      body = details.value === 1
-        ? `${details.voterAlias}-მა მოიწონა შენი პოსტი`
-        : `${details.voterAlias}-მა არ მოიწონა შენი პოსტი`;
-      break;
-    case 'comment-vote-created':
-      body = details.value === 1
-        ? `${details.voterAlias}-მა მოიწონა შენი კომენტარი`
-        : `${details.voterAlias}-მა არ მოიწონა შენი კომენტარი`;
-      break;
-    case 'post-reward-created':
-      body = `${details.giverAlias}-მა დააჯილდოვა შენი პოსტი: ${details.rewardName}`;
-      break;
-    case 'comment-reward-created':
-      body = `${details.giverAlias}-მა დააჯილდოვა შენი გამოცნობა: ${details.rewardName}`;
-      break;
-    case 'feed-event-reaction':
-      body = `${details.reactorAlias}-მა მოიწონა შენი ამბავი`;
-      break;
-    case 'zone-member-invitation':
-      body = `${details.userAlias}-მა მოგიწვია საბზონაში: ${details.zoneSlug}`;
-      break;
-    case 'zone-quest-created':
-      body = details.character?.name
-        ? `${details.character.name}ს შენთვის ახალი მისია აქვს: ${details.questTitle}`
-        : `ახალი მისია: ${details.questTitle}`;
-      break;
-    case 'zone-quest-completed':
-      body = `მისია შესრულებულია: ${details.questTitle}`;
-      break;
-    case 'zone-quest-objective-rejected':
-      body = `ამოცანა "${details.objectiveTitle ?? ''}" დაიწუნა, სცადე თავიდან`;
-      break;
-    case 'zone-quest-objective-accepted':
-      body = `ამოცანა "${details.objectiveTitle ?? ''}" დადასტურდა`;
-      break;
-    case 'zone-quest-objective-submitted':
-      body = `${details.submitterAlias}-მა გამოაგზავნა "${details.objectiveTitle ?? ''}" შესაფასებლად`;
-      break;
-    case 'connection-completed-zone-quest':
-      body = `${details.userAlias}-მა შეასრულა მისია: ${details.questTitle}`;
-      break;
-  }
+  const { title, body } = buildPushMessage(type, details);
 
-  await Promise.all(tokens.map((t) => sendExpoPush(t, 'G\'Spot', body, { type, ...details })));
+  // `notificationId` lets the app mark the row read when the push is tapped.
+  const data = { type, notificationId, ...details };
+
+  await Promise.all(tokens.map((t) => sendExpoPush(t, title, body, data)));
 }
