@@ -1,4 +1,5 @@
 import {
+  awardOneTimeAchievement,
   getGuessesTotalCount,
   getPerfectGuessesTotalCount,
   updateProgressiveAchievement,
@@ -23,6 +24,10 @@ export default async function handlePostGuessedAchievements(event: PostGuessedEv
         achievementKey: 'perfect_guesses_total',
         currentValue: perfectGuessesTotal,
       });
+    }
+    
+    if (event.payload.score === 42) {
+      await awardOneTimeAchievement(userId, 'guess_score_42', event.createdAt);
     }
   } catch (err) {
     console.error('Failed to process post-guessed achievements', err, event);
