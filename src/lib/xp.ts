@@ -26,6 +26,8 @@ export const xpActionDictionary: Record<string, number> = {
   'post-being-guessed': 10,
   'post-published': 100,
   'post-deleted': -100,
+  'hide-and-seek-found': 300,
+  'hide-and-seek-host-found': 50,
 };
 
 export type XPInfo = {

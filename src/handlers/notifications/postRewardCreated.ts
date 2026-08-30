@@ -7,6 +7,7 @@ export default async function handlePostRewardCreated(event: PostRewardCreatedEv
   const details = {
     postId: payload.postId,
     commentId: payload.commentId ?? null,
+    targetType: payload.targetType ?? (payload.commentId ? 'comment' : 'post'),
     rewardKey: payload.rewardKey,
     rewardName: payload.rewardName,
     giverId: payload.giverId,

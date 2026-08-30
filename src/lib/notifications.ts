@@ -98,6 +98,10 @@ export function buildPushMessage(type: string, details: Record<string, any>): Pu
     case 'post-reward-created':
       return { title: by(details.giverAlias), body: `დააჯილდოვა შენი პოსტი: ${details.rewardName}` };
     case 'comment-reward-created':
+      if (details.targetType === 'hide-and-seek-check')
+        return { title: by(details.giverAlias), body: details.rewardName };
+      if (details.targetType === 'comment')
+        return { title: by(details.giverAlias), body: `დააჯილდოვა შენი კომენტარი: ${details.rewardName}` };
       return { title: by(details.giverAlias), body: `დააჯილდოვა შენი გამოცნობა: ${details.rewardName}` };
     case 'feed-event-reaction':
       return { title: by(details.reactorAlias), body: 'მოიწონა შენი ამბავი' };
@@ -120,6 +124,18 @@ export function buildPushMessage(type: string, details: Record<string, any>): Pu
       };
     case 'connection-completed-zone-quest':
       return { title: by(details.userAlias), body: `შეასრულა მისია: ${details.questTitle}` };
+    case 'hide-and-seek-created':
+      return { title: by(details.hostAlias), body: `დაიწყო დამალობანა: ${details.title}` };
+    case 'hide-and-seek-joined':
+      return { title: by(details.userAlias), body: 'შენს დამალობანაში ჩაერთო' };
+    case 'hide-and-seek-checked':
+      return { title: by(details.userAlias), body: `მოგიახლოვდა ${details.distanceMeters} მეტრზე` };
+    case 'hide-and-seek-found':
+      return details.role === 'host'
+        ? { title: by(details.userAlias), body: 'გიპოვა!' }
+        : { title: 'დამალობანა', body: `იპოვე ${details.hostAlias}!` };
+    case 'hide-and-seek-ended':
+      return { title: 'დამალობანა', body: `დასრულდა: ${details.title}` };
     default:
       return { title: APP_NAME, body: 'ახალი შეტყობინება' };
   }

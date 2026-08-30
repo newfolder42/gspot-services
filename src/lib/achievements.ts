@@ -390,3 +390,25 @@ export async function getPerfectGuessesTotalCount(userId: number): Promise<numbe
 
   return Number(res.rows[0]?.total || 0);
 }
+
+/**
+ * Hide-and-seek games this user completed — as the seeker who made the catch, or as the
+ * host who was found. Both sides progress the same achievement track.
+ */
+export async function getHideAndSeekCompletedCount(userId: number): Promise<number> {
+  const res = await query(
+    `SELECT COUNT(DISTINCT pl.game_id)::int AS total
+       FROM hide_and_seek_players pl
+      WHERE pl.user_id = $1
+        AND (
+          pl.status = 'found'
+          OR (pl.role = 'host' AND EXISTS (
+                SELECT 1 FROM hide_and_seek_players s
+                 WHERE s.game_id = pl.game_id AND s.status = 'found'
+              ))
+        )`,
+    [userId]
+  );
+
+  return Number(res.rows[0]?.total || 0);
+}

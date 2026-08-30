@@ -64,6 +64,21 @@ import { deleteOldFeedEvents } from "./jobs/deleteOldFeedEvents";
 import handleUserActivityStreak from "./handlers/streaks/handleUserActivityStreak";
 import { PostPublishedEvent } from "./types/post-published";
 import { PostGuessedEvent } from "./types/post-guessed";
+import {
+  HideAndSeekCheckedSchema,
+  HideAndSeekCreatedSchema,
+  HideAndSeekEndedSchema,
+  HideAndSeekFoundSchema,
+  HideAndSeekJoinedSchema,
+} from "./types/hide-and-seek";
+import handleHideAndSeekCreated from "./handlers/notifications/hideAndSeekCreated";
+import handleHideAndSeekJoined from "./handlers/notifications/hideAndSeekJoined";
+import handleHideAndSeekChecked from "./handlers/notifications/hideAndSeekChecked";
+import handleHideAndSeekFound from "./handlers/notifications/hideAndSeekFound";
+import handleHideAndSeekEnded from "./handlers/notifications/hideAndSeekEnded";
+import handleXpForHideAndSeekFound from "./handlers/xp/handleXpForHideAndSeekFound";
+import handleHideAndSeekAchievements from "./handlers/achievements/handleHideAndSeekAchievements";
+import { endExpiredHideAndSeekGames } from "./jobs/endExpiredHideAndSeekGames";
 import { PostVoteCreatedEvent } from "./types/post-vote-created";
 import { PostCommentCreatedEvent } from "./types/post-comment-created";
 
@@ -99,6 +114,13 @@ async function start() {
   mediator.register('gspot:zone_quest:completed', withSchema(ZoneQuestCompletedSchema, handleZoneQuestCompletedConnections));
   mediator.register('gspot:zone_quest:created', withSchema(ZoneQuestCreatedSchema, handleZoneQuestCreated));
 
+  // hide and seek
+  mediator.register('gspot:hide_and_seek:created', withSchema(HideAndSeekCreatedSchema, handleHideAndSeekCreated));
+  mediator.register('gspot:hide_and_seek:joined', withSchema(HideAndSeekJoinedSchema, handleHideAndSeekJoined));
+  mediator.register('gspot:hide_and_seek:checked', withSchema(HideAndSeekCheckedSchema, handleHideAndSeekChecked));
+  mediator.register('gspot:hide_and_seek:found', withSchema(HideAndSeekFoundSchema, handleHideAndSeekFound));
+  mediator.register('gspot:hide_and_seek:ended', withSchema(HideAndSeekEndedSchema, handleHideAndSeekEnded));
+
   // feed events
   mediator.register('gspot:zone_quest:completed', withSchema(ZoneQuestCompletedSchema, handleQuestCompletedFeedEvent));
   mediator.register('gspot:user_achievement:achieved', withSchema(UserAchievementAchievedSchema, handleAchievementUnlockedFeedEvent));
@@ -108,6 +130,7 @@ async function start() {
   mediator.register('gspot:post:guessed', withSchema(PostGuessedSchema, handleXpForPostGuessed));
   mediator.register('gspot:post:published', withSchema(PostPublishedSchema, handleXpForPostPublished));
   mediator.register('gspot:post:deleted', withSchema(PostDeletedSchema, handleXpForPostDeleted));
+  mediator.register('gspot:hide_and_seek:found', withSchema(HideAndSeekFoundSchema, handleXpForHideAndSeekFound));
 
   // reward handlers
   mediator.register('gspot:zone_quest:completed', withSchema(ZoneQuestCompletedSchema, handleRewardsForZoneQuestCompleted));
@@ -128,6 +151,7 @@ async function start() {
   mediator.register('gspot:user:level-up', withSchema(UserLevelChangedSchema, handleUserLevelChangedAchievements));
   mediator.register('gspot:user:level-down', withSchema(UserLevelChangedSchema, handleUserLevelChangedAchievements));
   mediator.register('gspot:zone_quest:completed', withSchema(ZoneQuestCompletedSchema, handleZoneQuestCompletedAchievements));
+  mediator.register('gspot:hide_and_seek:found', withSchema(HideAndSeekFoundSchema, handleHideAndSeekAchievements));
 
   // Subscribe to Redis events
   await redis.pSubscribe('gspot:*', async (message, channel) => {
@@ -150,6 +174,9 @@ async function start() {
 
   // Schedule deletion of stale pending registrations (every minute)
   cron.schedule('* * * * *', runDeletePendingRegistrations);
+
+  // Close hide-and-seek games past their end time and release their player rows (every minute)
+  cron.schedule('* * * * *', endExpiredHideAndSeekGames);
 
   // Schedule deletion of old notifications (daily at midnight)
   cron.schedule('0 0 * * *', deleteOldNotifications);

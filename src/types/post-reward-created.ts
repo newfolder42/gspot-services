@@ -3,6 +3,8 @@ import { z } from 'zod';
 export const PostRewardCreatedPayloadSchema = z.object({
   postId: z.number(),
   commentId: z.number().nullable().optional(),
+  // 'post' | 'comment' | 'guess-comment' | 'hide-and-seek-check'
+  targetType: z.string().optional(),
   rewardKey: z.string(),
   rewardName: z.string(),
   giverId: z.number(),
