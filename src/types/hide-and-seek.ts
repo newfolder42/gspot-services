@@ -80,7 +80,7 @@ export const HideAndSeekFoundSchema = z.object({
 export const HideAndSeekEndedPayloadSchema = z.object({
   ...base,
   hostId: z.number(),
-  reason: z.enum(['expired', 'host_ended']),
+  reason: z.enum(['expired', 'host_ended', 'first_found']),
   participantIds: z.array(z.number()).default([]),
 });
 
