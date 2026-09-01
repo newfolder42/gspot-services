@@ -65,7 +65,9 @@ import handleUserActivityStreak from "./handlers/streaks/handleUserActivityStrea
 import { PostPublishedEvent } from "./types/post-published";
 import { PostGuessedEvent } from "./types/post-guessed";
 import {
+  HideAndSeekCheckedEvent,
   HideAndSeekCheckedSchema,
+  HideAndSeekCreatedEvent,
   HideAndSeekCreatedSchema,
   HideAndSeekEndedSchema,
   HideAndSeekFoundSchema,
@@ -142,6 +144,8 @@ async function start() {
   mediator.register('gspot:post:vote-created', withSchema(PostVoteCreatedSchema, handleUserActivityStreak<PostVoteCreatedEvent>((e) => (e.payload.value === 1 ? e.payload.voterId : null))));
   mediator.register('gspot:post:comment-created', withSchema(PostCommentCreatedSchema, handleUserActivityStreak<PostCommentCreatedEvent>((e) => e.payload.commenterId)));
   mediator.register('gspot:post:reward-created', withSchema(PostRewardCreatedSchema, handleUserActivityStreak<PostRewardCreatedEvent>((e) => e.payload.giverId)));
+  mediator.register('gspot:hide_and_seek:created', withSchema(HideAndSeekCreatedSchema, handleUserActivityStreak<HideAndSeekCreatedEvent>((e) => e.payload.hostId)));
+  mediator.register('gspot:hide_and_seek:checked', withSchema(HideAndSeekCheckedSchema, handleUserActivityStreak<HideAndSeekCheckedEvent>((e) => e.payload.userId)));
 
   // achievement handlers
   mediator.register('gspot:user_connection:created', withSchema(UserConnectionCreatedSchema, handleUserConnectionAchievements));
