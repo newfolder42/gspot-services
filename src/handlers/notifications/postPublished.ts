@@ -5,6 +5,8 @@ import { createNotification } from '../../lib/notifications';
 export default async function handlePostPublished(event: PostPublishedEvent) {
   const payload = event.payload;
 
+  if (payload.postType === 'quest-completion') return;
+
   const notificationType = payload.postType === 'quest-completion'
     ? 'connection-created-quest-post'
     : 'connection-created-gps-post';
