@@ -19,6 +19,7 @@ export default async function handleRewardsForUserAchievementAchieved(event: Use
 
     await applyRewardSpecs(payload.userId, specs, {
       xpAction: 'achievement_achieved',
+      itemSource: 'achievement',
       details: {
         achievementKey: payload.achievementKey,
         ...(payload.milestoneKey ? { milestoneKey: payload.milestoneKey } : {}),

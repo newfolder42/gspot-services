@@ -136,6 +136,8 @@ export function buildPushMessage(type: string, details: Record<string, any>): Pu
         : { title: 'დამალობანა', body: `იპოვე ${details.hostAlias}!` };
     case 'hide-and-seek-ended':
       return { title: 'დამალობანა', body: `დასრულდა: ${details.title}` };
+    case 'item-found':
+      return { title: 'ინვენტარი', body: `შენს ინვენტარში მატებაა - ${details.itemName}` };
     default:
       return { title: APP_NAME, body: 'ახალი შეტყობინება' };
   }

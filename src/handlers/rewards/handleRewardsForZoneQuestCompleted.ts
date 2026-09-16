@@ -21,6 +21,7 @@ export default async function handleRewardsForZoneQuestCompleted(event: ZoneQues
 
     await applyRewardSpecs(payload.userId, specs, {
       xpAction: 'zone_quest_completed',
+      itemSource: 'quest',
       details: { questId: payload.questId, zoneId: payload.zoneId },
     });
   } catch (err) {

@@ -83,6 +83,9 @@ import handleHideAndSeekAchievements from "./handlers/achievements/handleHideAnd
 import { endExpiredHideAndSeekGames } from "./jobs/endExpiredHideAndSeekGames";
 import { PostVoteCreatedEvent } from "./types/post-vote-created";
 import { PostCommentCreatedEvent } from "./types/post-comment-created";
+import { ItemFoundSchema } from "./types/item-found";
+import handleItemFound from "./handlers/notifications/itemFound";
+import handleItemFoundAchievements from "./handlers/achievements/handleItemFoundAchievements";
 
 dotenv.config();
 
@@ -115,6 +118,7 @@ async function start() {
   mediator.register('gspot:zone_quest:completed', withSchema(ZoneQuestCompletedSchema, handleZoneQuestCompleted));
   mediator.register('gspot:zone_quest:completed', withSchema(ZoneQuestCompletedSchema, handleZoneQuestCompletedConnections));
   mediator.register('gspot:zone_quest:created', withSchema(ZoneQuestCreatedSchema, handleZoneQuestCreated));
+  mediator.register('gspot:item:found', withSchema(ItemFoundSchema, handleItemFound));
 
   // hide and seek
   mediator.register('gspot:hide_and_seek:created', withSchema(HideAndSeekCreatedSchema, handleHideAndSeekCreated));
@@ -156,6 +160,7 @@ async function start() {
   mediator.register('gspot:user:level-down', withSchema(UserLevelChangedSchema, handleUserLevelChangedAchievements));
   mediator.register('gspot:zone_quest:completed', withSchema(ZoneQuestCompletedSchema, handleZoneQuestCompletedAchievements));
   mediator.register('gspot:hide_and_seek:found', withSchema(HideAndSeekFoundSchema, handleHideAndSeekAchievements));
+  mediator.register('gspot:item:found', withSchema(ItemFoundSchema, handleItemFoundAchievements));
 
   // Subscribe to Redis events
   await redis.pSubscribe('gspot:*', async (message, channel) => {

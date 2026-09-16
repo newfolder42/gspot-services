@@ -1,10 +1,12 @@
 import { query } from './db';
 import { increaseUserXp } from './xp';
+import { grantItemToUser, syncItemsCollectedAchievement, type ItemGrantSource } from './inventory';
 import { RewardSpecSchema, RewardSpec } from '../types/reward-spec';
 
 export type RewardContext = {
   xpAction: string;
   details?: Record<string, any>;
+  itemSource?: ItemGrantSource;
 };
 
 const DEFAULT_DAILY_REWARD_LIMIT = 2;
@@ -64,6 +66,16 @@ export async function applyRewardSpecs(
         case 'reward-limit':
           await increaseDailyRewardLimit(userId, spec.value);
           break;
+        case 'item': {
+          const item = await grantItemToUser(
+            userId,
+            spec.alias,
+            context.itemSource ?? 'quest',
+            context.details ?? {}
+          );
+          if (item) await syncItemsCollectedAchievement(userId);
+          break;
+        }
       }
     } catch (err) {
       console.error('Failed applying reward spec', err, { userId, spec, context });
