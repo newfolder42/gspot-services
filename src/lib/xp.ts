@@ -1,7 +1,7 @@
 import { query, withTransaction } from './db';
 import { publish } from './redis';
 
-export const maxLevel = 42;
+export const maxLevel = 60;
 
 let cachedXpTable: number[] | null = null;
 
