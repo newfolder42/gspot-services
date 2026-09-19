@@ -1,7 +1,7 @@
 import { Pool, PoolClient } from 'pg';
 import dotenv from 'dotenv';
 
-dotenv.config();
+dotenv.config({ quiet: true });
 
 const pool = new Pool({
   database: process.env.POSTGRES_DB,

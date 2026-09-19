@@ -1,5 +1,5 @@
 import { query } from "./db";
-import { sendExpoPush, getPushTokensForUser } from "./push";
+import { sendExpoPush, getPushTokensForUser, getPostPushImages } from "./push";
 
 export type NotificationRecord = {
   id: number;
@@ -157,8 +157,14 @@ async function sendPushForNotification(
 
   const { title, body } = buildPushMessage(type, details);
 
+  // Anything that opens a post ships that post's small renditions, so the app can
+  // warm its image cache while the notification sits in the tray instead of
+  // starting the download only once the user has tapped through.
+  const postId = Number(details.postId);
+  const images = Number.isInteger(postId) && postId > 0 ? await getPostPushImages(postId) : {};
+
   // `notificationId` lets the app mark the row read when the push is tapped.
-  const data = { type, notificationId, ...details };
+  const data = { type, notificationId, ...details, ...images };
 
   await Promise.all(tokens.map((t) => sendExpoPush(t, title, body, data)));
 }

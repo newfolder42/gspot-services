@@ -87,7 +87,7 @@ import { ItemFoundSchema } from "./types/item-found";
 import handleItemFound from "./handlers/notifications/itemFound";
 import handleItemFoundAchievements from "./handlers/achievements/handleItemFoundAchievements";
 
-dotenv.config();
+dotenv.config({ quiet: true });
 
 const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
 const PORT = Number(process.env.PORT) || 3001;

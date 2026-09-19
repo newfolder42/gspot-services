@@ -66,6 +66,60 @@ export async function getPushTokensForUser(userId: number): Promise<string[]> {
   }
 }
 
+export type PostPushImages = { imageThumb?: string; imageFeed?: string };
+
+/**
+ * One post fans out to every connection, so the same lookup would otherwise run
+ * once per recipient. A minute is far longer than a fan-out takes and far
+ * shorter than a rendition URL lives, so staleness is not a concern.
+ */
+const POST_IMAGE_TTL_MS = 60_000;
+const postImageCache = new Map<number, { at: number; value: PostPushImages }>();
+
+/**
+ * The small renditions of a post's first photo, for the app to warm its image
+ * cache with when the push arrives (mobile lib/imagePrefetch.ts).
+ *
+ * These ride on the push payload only — they are deliberately not written into
+ * the stored notification `details`, which would put two URLs on every
+ * notification row for something that is only useful in the seconds before a
+ * tap.
+ */
+export async function getPostPushImages(postId: number): Promise<PostPushImages> {
+  const hit = postImageCache.get(postId);
+  if (hit && Date.now() - hit.at < POST_IMAGE_TTL_MS) return hit.value;
+
+  const value: PostPushImages = {};
+  try {
+    const res = await query(
+      `SELECT uc.details
+       FROM post_content pc
+       JOIN user_content uc ON uc.id = pc.content_id
+       WHERE pc.post_id = $1
+       ORDER BY pc.sort
+       LIMIT 1`,
+      [postId]
+    );
+
+    const variants = res.rows[0]?.details?.variants;
+    if (variants?.thumb) value.imageThumb = variants.thumb;
+    if (variants?.feed) value.imageFeed = variants.feed;
+  } catch {
+    // A push without prefetch hints is still a perfectly good push.
+  }
+
+  // Cached even when empty — a post with no renditions should not be re-queried
+  // once per recipient either.
+  postImageCache.set(postId, { at: Date.now(), value });
+  if (postImageCache.size > 500) {
+    for (const [key, entry] of postImageCache) {
+      if (Date.now() - entry.at >= POST_IMAGE_TTL_MS) postImageCache.delete(key);
+    }
+  }
+
+  return value;
+}
+
 /** Removes a token that is no longer deliverable. */
 export async function deletePushToken(token: string): Promise<void> {
   try {
