@@ -120,6 +120,7 @@ export async function createQuestCreatedEvent(payload: {
   zoneId: number;
   zoneSlug: string;
   characterName: string | null;
+  characterSlug: string | null;
   characterAvatar: string | null;
   createdBy: number;
   createdByAlias: string;
@@ -138,6 +139,7 @@ export async function createQuestCreatedEvent(payload: {
       zoneSlug: payload.zoneSlug,
       zoneName,
       characterName: payload.characterName,
+      characterSlug: payload.characterSlug,
       characterAvatar: payload.characterAvatar,
       createdByAlias: payload.createdByAlias,
     }

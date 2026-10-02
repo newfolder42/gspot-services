@@ -10,6 +10,7 @@ export default async function handleQuestCreatedFeedEvent(event: ZoneQuestCreate
     zoneId: payload.zoneId,
     zoneSlug: payload.zoneSlug,
     characterName: payload.character?.name ?? null,
+    characterSlug: payload.character?.slug ?? null,
     characterAvatar: payload.character?.avatarUrl ?? null,
     createdBy: payload.createdBy,
     createdByAlias: payload.createdByAlias,
