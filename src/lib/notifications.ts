@@ -65,7 +65,7 @@ export function buildPushMessage(type: string, details: Record<string, any>): Pu
       };
     }
     case 'connection-created-quest-post':
-      return { title: by(details.authorAlias), body: `შეასრულა მისია: ${details.title}` };
+      return { title: by(details.authorAlias), body: `შეასრულა მისია: "${details.title}"` };
     case 'gps-post-failed': {
       const postTitle = details.title?.trim();
       return {
@@ -123,7 +123,7 @@ export function buildPushMessage(type: string, details: Record<string, any>): Pu
         body: `გამოაგზავნა "${details.objectiveTitle ?? ''}" შესაფასებლად`,
       };
     case 'connection-completed-zone-quest':
-      return { title: by(details.userAlias), body: `შეასრულა მისია: ${details.questTitle}` };
+      return { title: by(details.userAlias), body: `შეასრულა მისია: "${details.questTitle}"` };
     case 'hide-and-seek-created':
       return { title: by(details.hostAlias), body: `დაიწყო დამალობანა: ${details.title}` };
     case 'hide-and-seek-joined':
