@@ -146,12 +146,13 @@ export async function createQuestCreatedEvent(payload: {
   );
 }
 
-async function getAchievementImage(
+async function getAchievementFeedInfo(
   achievementKey: string,
   milestoneKey?: string
-): Promise<string | null> {
+): Promise<{ imageUrl: string | null; hidden: boolean }> {
   const res = await query(
-    `SELECT COALESCE(am.image_url, a.image_url) AS image_url
+    `SELECT COALESCE(am.image_url, a.image_url) AS image_url,
+            (a.state = 'hidden' OR COALESCE(am.state = 'hidden', FALSE)) AS hidden
      FROM achievements a
      LEFT JOIN achievement_milestones am
        ON am.achievement_id = a.id AND am.key = $2
@@ -159,7 +160,10 @@ async function getAchievementImage(
      LIMIT 1`,
     [achievementKey, milestoneKey ?? null]
   );
-  return res.rows[0]?.image_url ?? null;
+  return {
+    imageUrl: res.rows[0]?.image_url ?? null,
+    hidden: res.rows[0]?.hidden ?? false,
+  };
 }
 
 export async function createAchievementUnlockedEvent(payload: {
@@ -171,7 +175,10 @@ export async function createAchievementUnlockedEvent(payload: {
   milestoneName?: string;
   achievedAt?: string | null;
 }): Promise<void> {
-  const imageUrl = await getAchievementImage(payload.achievementKey, payload.milestoneKey);
+  const { imageUrl, hidden } = await getAchievementFeedInfo(payload.achievementKey, payload.milestoneKey);
+
+  // Hidden achievements stay secret — never announce them in the feed.
+  if (hidden) return;
 
   const groupKey = `achv:${payload.achievementKey}:${payload.milestoneKey ?? '-'}`;
 
