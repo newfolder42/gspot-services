@@ -1,5 +1,6 @@
 import { query } from "./db";
 import { sendExpoPush, getPushTokensForUser, getPostPushImages } from "./push";
+import { locationDisputeReasonLabel } from "./locationDisputes";
 
 export type NotificationRecord = {
   id: number;
@@ -138,6 +139,33 @@ export function buildPushMessage(type: string, details: Record<string, any>): Pu
       return { title: 'დამალობანა', body: `დასრულდა: ${details.title}` };
     case 'item-found':
       return { title: 'ინვენტარი', body: `შენს ინვენტარში მატებაა - ${details.itemName}` };
+    case 'post-location-disputed': {
+      const reason = locationDisputeReasonLabel(details.reason);
+      return {
+        title: by(details.reporterAlias),
+        body: reason ? `გაასაჩივრა პოსტის ლოკაცია: ${reason}` : 'გაასაჩივრა პოსტის ლოკაცია',
+      };
+    }
+    case 'post-location-flagged': {
+      const reason = locationDisputeReasonLabel(details.reason);
+      return {
+        title: 'პოსტი',
+        body: reason ? `შენი პოსტის ლოკაცია გასაჩივრდა: ${reason}` : 'შენი პოსტის ლოკაცია გასაჩივრდა',
+      };
+    }
+    case 'post-location-correction-needed': {
+      const note = typeof details.note === 'string' ? details.note.trim().slice(0, 120) : '';
+      return {
+        title: 'პოსტი',
+        body: note ? `შენი პოსტი შეჩერდა, გაასწორე ლოკაცია — ${note}` : 'შენი პოსტი შეჩერდა, გაასწორე ლოკაცია',
+      };
+    }
+    case 'post-suspended':
+      return { title: by(details.actorAlias), body: 'შეაჩერა პოსტი ლოკაციის გამო' };
+    case 'post-location-corrected':
+      return { title: by(details.authorAlias), body: 'გაასწორა პოსტის ლოკაცია, პოსტი აღდგა' };
+    case 'post-discarded':
+      return { title: 'პოსტი', body: 'შენი პოსტი სამუდამოდ შეჩერებულია' };
     default:
       return { title: APP_NAME, body: 'ახალი შეტყობინება' };
   }

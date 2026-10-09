@@ -1,7 +1,7 @@
 import { query } from '../lib/db';
 import { PostGuessedEvent } from '../types/post-guessed';
 
-function weekKey(timestamp: Date): string {
+export function weekKey(timestamp: Date): string {
   const date = new Date(Date.UTC(timestamp.getUTCFullYear(), timestamp.getUTCMonth(), timestamp.getUTCDate()));
   const day = date.getUTCDay() || 7; // Sun=7
   date.setUTCDate(date.getUTCDate() + 4 - day); // shift to nearest Thursday
@@ -11,7 +11,7 @@ function weekKey(timestamp: Date): string {
   return `${isoYear}-W${String(isoWeek).padStart(2, '0')}`;
 }
 
-function monthKey(timestamp: Date): string {
+export function monthKey(timestamp: Date): string {
   const year = timestamp.getUTCFullYear();
   const month = String(timestamp.getUTCMonth() + 1).padStart(2, '0');
   return `${year}-M${month}`;

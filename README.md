@@ -63,6 +63,10 @@ Both services share the same PostgreSQL database and Redis instance. They do not
 | `gspot:post:processing` | post-processing side effects |
 | `gspot:post:failed` | failure notification |
 | `gspot:post:deleted` | XP revocation |
+| `gspot:post:location-disputed` | notification → zone owners/admins and post author (first open dispute only) |
+| `gspot:post:suspended` | notification → post author (correction needed), other zone owners/admins |
+| `gspot:post:discarded` | notification → post author |
+| `gspot:post:location-corrected` | notification → zone owners/admins, leaderboard re-score, achievement checks |
 | `gspot:post:comment-created` | comment notification (author or parent commenter), activity streak |
 | `gspot:post:vote-created` | vote notification, activity streak (upvotes only) |
 | `gspot:post:reward-created` | reward notification, activity streak |

@@ -86,6 +86,16 @@ import { PostCommentCreatedEvent } from "./types/post-comment-created";
 import { ItemFoundSchema } from "./types/item-found";
 import handleItemFound from "./handlers/notifications/itemFound";
 import handleItemFoundAchievements from "./handlers/achievements/handleItemFoundAchievements";
+import { PostLocationDisputedSchema } from "./types/post-location-disputed";
+import handlePostLocationDisputed from "./handlers/notifications/postLocationDisputed";
+import { PostSuspendedSchema } from "./types/post-suspended";
+import handlePostSuspended from "./handlers/notifications/postSuspended";
+import { PostDiscardedSchema } from "./types/post-discarded";
+import handlePostDiscarded from "./handlers/notifications/postDiscarded";
+import { PostLocationCorrectedSchema } from "./types/post-location-corrected";
+import handlePostLocationCorrected from "./handlers/notifications/postLocationCorrected";
+import handlePostLocationCorrectedLeaderboard from "./handlers/handlePostLocationCorrectedLeaderboard";
+import handlePostLocationCorrectedAchievements from "./handlers/achievements/handlePostLocationCorrectedAchievements";
 
 dotenv.config({ quiet: true });
 
@@ -119,6 +129,14 @@ async function start() {
   mediator.register('gspot:zone_quest:completed', withSchema(ZoneQuestCompletedSchema, handleZoneQuestCompletedConnections));
   mediator.register('gspot:zone_quest:created', withSchema(ZoneQuestCreatedSchema, handleZoneQuestCreated));
   mediator.register('gspot:item:found', withSchema(ItemFoundSchema, handleItemFound));
+
+  // location disputes: a guesser contests a post's location, staff suspend it, the author corrects it
+  mediator.register('gspot:post:location-disputed', withSchema(PostLocationDisputedSchema, handlePostLocationDisputed));
+  mediator.register('gspot:post:suspended', withSchema(PostSuspendedSchema, handlePostSuspended));
+  mediator.register('gspot:post:discarded', withSchema(PostDiscardedSchema, handlePostDiscarded));
+  mediator.register('gspot:post:location-corrected', withSchema(PostLocationCorrectedSchema, handlePostLocationCorrected));
+  mediator.register('gspot:post:location-corrected', withSchema(PostLocationCorrectedSchema, handlePostLocationCorrectedLeaderboard));
+  mediator.register('gspot:post:location-corrected', withSchema(PostLocationCorrectedSchema, handlePostLocationCorrectedAchievements));
 
   // hide and seek
   mediator.register('gspot:hide_and_seek:created', withSchema(HideAndSeekCreatedSchema, handleHideAndSeekCreated));
