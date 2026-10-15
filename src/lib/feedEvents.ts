@@ -68,10 +68,18 @@ async function getUserQuestPhotos(questId: number, userId: number): Promise<Ques
     });
 }
 
-async function getQuestPostId(questId: number): Promise<number | null> {
+// Several members (and several runs of a repeatable quest) each own a completion post, so
+// the lookup is scoped to the actor and takes their newest one — the post is created before
+// the zone_quest:completed event is published.
+async function getQuestPostId(questId: number, userId: number): Promise<number | null> {
   const res = await query(
-    `SELECT post_id FROM post_quest_completions WHERE quest_id = $1 LIMIT 1`,
-    [questId]
+    `SELECT pqc.post_id
+     FROM post_quest_completions pqc
+     JOIN posts p ON p.id = pqc.post_id
+     WHERE pqc.quest_id = $1 AND p.user_id = $2
+     ORDER BY p.created_at DESC, p.id DESC
+     LIMIT 1`,
+    [questId, userId]
   );
   return res.rows[0]?.post_id != null ? Number(res.rows[0].post_id) : null;
 }
@@ -87,7 +95,7 @@ export async function createQuestCompletedEvent(payload: {
   const [characterAvatar, photos, postId] = await Promise.all([
     getQuestCharacterAvatar(payload.questId),
     getUserQuestPhotos(payload.questId, payload.userId),
-    getQuestPostId(payload.questId),
+    getQuestPostId(payload.questId, payload.userId),
   ]);
 
   await insertFeedEvent(
