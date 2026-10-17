@@ -42,17 +42,30 @@ async function getQuestCharacterAvatar(questId: number): Promise<string | null> 
   return res.rows[0]?.avatar_url ?? null;
 }
 
-async function getUserQuestPhotos(questId: number, userId: number): Promise<QuestPhoto[]> {
+// Scoped to the finished run when known — a repeatable quest has one run per completion and
+// the earlier ones' photos must not leak in. Without a run id (older publishers) it falls
+// back to the member's newest completed run.
+async function getUserQuestPhotos(
+  questId: number,
+  userId: number,
+  userQuestId?: number
+): Promise<QuestPhoto[]> {
   const res = await query(
     `SELECT zqo.title AS objective_title, uqo.photo_url, uqo.capture_data
-     FROM user_quests uq
-     JOIN user_quest_objectives uqo ON uqo.user_quest_id = uq.id
+     FROM user_quest_objectives uqo
      JOIN zone_quest_objectives zqo ON zqo.id = uqo.objective_id
-     WHERE uq.quest_id = $1 AND uq.user_id = $2 AND uqo.status = 'completed'
+     WHERE uqo.user_quest_id = COALESCE(
+             $3::bigint,
+             (SELECT uq.id FROM user_quests uq
+              WHERE uq.quest_id = $1 AND uq.user_id = $2 AND uq.status = 'completed'
+              ORDER BY uq.accepted_at DESC, uq.id DESC
+              LIMIT 1)
+           )
+       AND uqo.status = 'completed'
        AND uqo.photo_url IS NOT NULL
      ORDER BY zqo.sort_order ASC
      LIMIT 6`,
-    [questId, userId]
+    [questId, userId, userQuestId ?? null]
   );
 
   return res.rows
@@ -70,16 +83,23 @@ async function getUserQuestPhotos(questId: number, userId: number): Promise<Ques
 
 // Several members (and several runs of a repeatable quest) each own a completion post, so
 // the lookup is scoped to the actor and takes their newest one — the post is created before
-// the zone_quest:completed event is published.
-async function getQuestPostId(questId: number, userId: number): Promise<number | null> {
+// the zone_quest:completed event is published. With a run id, only posts made since that run
+// was accepted count (runs never overlap), so an earlier run's post can't be picked.
+async function getQuestPostId(
+  questId: number,
+  userId: number,
+  userQuestId?: number
+): Promise<number | null> {
   const res = await query(
     `SELECT pqc.post_id
      FROM post_quest_completions pqc
      JOIN posts p ON p.id = pqc.post_id
+     LEFT JOIN user_quests uq ON uq.id = $3::bigint
      WHERE pqc.quest_id = $1 AND p.user_id = $2
+       AND ($3::bigint IS NULL OR uq.id IS NULL OR p.created_at >= uq.accepted_at)
      ORDER BY p.created_at DESC, p.id DESC
      LIMIT 1`,
-    [questId, userId]
+    [questId, userId, userQuestId ?? null]
   );
   return res.rows[0]?.post_id != null ? Number(res.rows[0].post_id) : null;
 }
@@ -91,17 +111,25 @@ export async function createQuestCompletedEvent(payload: {
   zoneSlug: string;
   userId: number;
   userAlias: string;
+  userQuestId?: number;
 }): Promise<void> {
   const [characterAvatar, photos, postId] = await Promise.all([
     getQuestCharacterAvatar(payload.questId),
-    getUserQuestPhotos(payload.questId, payload.userId),
-    getQuestPostId(payload.questId, payload.userId),
+    getUserQuestPhotos(payload.questId, payload.userId, payload.userQuestId),
+    getQuestPostId(payload.questId, payload.userId, payload.userQuestId),
   ]);
+
+  // One event per run, so completing a repeatable quest again isn't swallowed by the unique
+  // (actor, type, group_key) index. Readers bucket these by ref_id (the quest) — see
+  // web/src/lib/feedEvents.ts — so the viewer-facing group key stays `quest:<questId>`.
+  const groupKey = payload.userQuestId
+    ? `quest:${payload.questId}:${payload.userQuestId}`
+    : `quest:${payload.questId}`;
 
   await insertFeedEvent(
     payload.userId,
     'quest_completed',
-    `quest:${payload.questId}`,
+    groupKey,
     payload.questId,
     {
       questId: payload.questId,

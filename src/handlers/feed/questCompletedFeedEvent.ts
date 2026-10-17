@@ -11,5 +11,6 @@ export default async function handleQuestCompletedFeedEvent(event: ZoneQuestComp
     zoneSlug: payload.zoneSlug,
     userId: payload.userId,
     userAlias: payload.userAlias,
+    userQuestId: payload.userQuestId,
   });
 }
