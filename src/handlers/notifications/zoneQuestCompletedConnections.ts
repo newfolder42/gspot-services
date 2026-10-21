@@ -15,6 +15,7 @@ export default async function handleZoneQuestCompletedConnections(event: ZoneQue
       zoneSlug: payload.zoneSlug,
       questId: payload.questId,
       questTitle: payload.questTitle,
+      postId: payload.postId,
     });
   }
 }
