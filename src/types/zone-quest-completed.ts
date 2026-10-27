@@ -8,7 +8,7 @@ export const ZoneQuestCompletedPayloadSchema = z.object({
   userId: z.number(),
   userAlias: z.string(),
   userQuestId: z.number().optional(),
-  postId: z.number().optional(),
+  postId: z.coerce.number().optional(),
   objectives: z.array(z.object({
     objectiveTitle: z.string().nullable(),
     photoUrl: z.string().nullable(),
