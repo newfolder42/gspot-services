@@ -19,11 +19,29 @@ export default async function handleRewardsForZoneQuestCompleted(event: ZoneQues
       return;
     }
 
-    await applyRewardSpecs(payload.userId, specs, {
+    const granted = await applyRewardSpecs(payload.userId, specs, {
       xpAction: 'zone_quest_completed',
       itemSource: 'quest',
       details: { questId: payload.questId, zoneId: payload.zoneId },
     });
+
+    // What the run actually granted goes on its completion post, for the overlay over the
+    // post's first photo. Own try/catch: the items are already in the bag, so a failure here
+    // costs the post its overlay and nothing else.
+    if (payload.postId && granted.length > 0) {
+      try {
+        await query(
+          `INSERT INTO post_items (post_id, item_id, sort)
+           SELECT $1, i.id, (t.ord - 1)::smallint
+             FROM unnest($2::varchar[]) WITH ORDINALITY AS t(alias, ord)
+             JOIN items i ON i.alias = t.alias
+           ON CONFLICT (post_id, item_id) DO NOTHING`,
+          [payload.postId, [...new Set(granted.map((item) => item.alias))]]
+        );
+      } catch (err) {
+        console.error('Failed attaching quest items to post', err, event);
+      }
+    }
   } catch (err) {
     console.error('Failed handleRewardsForZoneQuestCompleted', err, event);
   }

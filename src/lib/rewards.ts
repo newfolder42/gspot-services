@@ -1,6 +1,6 @@
 import { query } from './db';
 import { increaseUserXp } from './xp';
-import { grantItemToUser, syncItemsCollectedAchievement, type ItemGrantSource } from './inventory';
+import { grantItemToUser, syncItemsCollectedAchievement, type GrantedItem, type ItemGrantSource } from './inventory';
 import { RewardSpecSchema, RewardSpec } from '../types/reward-spec';
 
 export type RewardContext = {
@@ -44,11 +44,13 @@ export function parseRewardSpecs(raw: unknown, source: string): RewardSpec[] {
   return specs;
 }
 
+/** Returns the items that actually landed in the bag, in spec order — a unique item the user already held is not among them. */
 export async function applyRewardSpecs(
   userId: number,
   specs: RewardSpec[],
   context: RewardContext
-): Promise<void> {
+): Promise<GrantedItem[]> {
+  const granted: GrantedItem[] = [];
   for (const spec of specs) {
     try {
       switch (spec.type) {
@@ -73,7 +75,10 @@ export async function applyRewardSpecs(
             context.itemSource ?? 'quest',
             context.details ?? {}
           );
-          if (item) await syncItemsCollectedAchievement(userId);
+          if (item) {
+            granted.push(item);
+            await syncItemsCollectedAchievement(userId);
+          }
           break;
         }
       }
@@ -81,4 +86,5 @@ export async function applyRewardSpecs(
       console.error('Failed applying reward spec', err, { userId, spec, context });
     }
   }
+  return granted;
 }
