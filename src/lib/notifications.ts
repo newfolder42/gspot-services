@@ -94,7 +94,9 @@ export function buildPushMessage(type: string, details: Record<string, any>): Pu
     case 'comment-vote-created':
       return {
         title: by(details.voterAlias),
-        body: details.value === 1 ? 'მოიწონა შენი კომენტარი' : 'არ მოიწონა შენი კომენტარი',
+        body: details.targetType === 'guess-comment'
+          ? (details.value === 1 ? 'მოიწონა შენი გამოცნობა' : 'არ მოიწონა შენი გამოცნობა')
+          : (details.value === 1 ? 'მოიწონა შენი კომენტარი' : 'არ მოიწონა შენი კომენტარი'),
       };
     case 'post-reward-created':
       return { title: by(details.giverAlias), body: `დააჯილდოვა შენი პოსტი: ${details.rewardName}` };

@@ -10,6 +10,7 @@ export const PostVoteCreatedPayloadSchema = z.object({
   postAuthorAlias: z.string(),
   commentAuthorId: z.number().nullable().optional(),
   commentAuthorAlias: z.string().nullable().optional(),
+  commentType: z.string().nullable().optional(),
   zoneId: z.number(),
   zoneSlug: z.string(),
 });

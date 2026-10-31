@@ -6,9 +6,12 @@ export default async function handlePostVoteCreated(event: PostVoteCreatedEvent)
 
   if (payload.value !== 1) return;
 
+  const isGuessComment = payload.commentType === 'gps-guess-comment' || payload.commentType === 'gps-photo-guess-comment';
+
   const details = {
     postId: payload.postId,
     commentId: payload.commentId ?? null,
+    targetType: isGuessComment ? 'guess-comment' : payload.commentId ? 'comment' : 'post',
     value: payload.value,
     voterId: payload.voterId,
     voterAlias: payload.voterAlias,
