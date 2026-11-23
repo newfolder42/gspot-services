@@ -1,27 +1,26 @@
 import { PostGuessedEvent } from '../../types/post-guessed';
-import { createNotification } from '../../lib/notifications';
+import { upsertGroupedNotification } from '../../lib/notifications';
 
+/**
+ * Everyone who guesses a post lands in one notification per guess kind, so a post that
+ * three people tried reads "A, B and 1 other tried guessing" instead of three rows.
+ */
 export default async function handlePostGuessed(event: PostGuessedEvent) {
   const payload = event.payload;
   const guessType = payload.guessType;
 
+  if (guessType !== 'gps-guess' && guessType !== 'gps-photo-guess') return;
 
-  if (guessType == 'gps-guess') {
-    await createNotification(payload.authorId, guessType, {
+  await upsertGroupedNotification({
+    userId: payload.authorId,
+    type: guessType,
+    groupKey: `${guessType}:${payload.postId}`,
+    actor: { userId: payload.userId, alias: payload.userAlias },
+    details: {
       postId: payload.postId,
       userId: payload.userId,
       userAlias: payload.userAlias,
       score: payload.score,
-    });
-  }
-
-
-  if (guessType == 'gps-photo-guess') {
-    await createNotification(payload.authorId, guessType, {
-      postId: payload.postId,
-      userId: payload.userId,
-      userAlias: payload.userAlias,
-      score: payload.score,
-    });
-  }
+    },
+  });
 }

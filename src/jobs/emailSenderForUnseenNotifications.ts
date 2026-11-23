@@ -121,7 +121,7 @@ export async function runEmailSenderForUnseenNotifications() {
       JOIN users u ON un.user_id = u.id
       JOIN user_options uo ON u.id = uo.user_id
       WHERE (un.seen = 0 OR un.seen IS NULL)
-        AND un.created_at < NOW() - INTERVAL '12 hours'
+        AND un.updated_at < NOW() - INTERVAL '12 hours'
         AND un.type IN (
           'gps-guess',
           'connection-created-gps-post',
